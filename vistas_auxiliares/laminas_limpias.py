@@ -6,7 +6,7 @@ LÁMINAS LIMPIAS (estilo tablero, solo geometría) + LÁMINAS DE DISTANCIAS
 Misma geometría y comprobaciones que laminas_tablero.py, dibujadas como en la pizarra:
   * negro = aristas (ocultas en trazo), verde = líneas de origen, rojo discontinuo = LOS / ejes,
     rótulos rojos con subíndice de la vista. Sin rellenos ni flechas decorativas.
-  * Prisma hexagonal puro (sin el agujero) para que se lea solo la construcción geométrica.
+  * Tuerca con su agujero roscado (Ø estimado en proyecciones_auxiliares_tuerca.py).
   * Los rótulos se colocan automáticamente donde no tocan ninguna línea ni otro rótulo.
 
 REGLA DE LAS DOS VISTAS (la que explica el profesor):
@@ -36,7 +36,7 @@ ALL, FACE = T.ALL, T.FACE
 
 # ----------------------------------------------------------------------------------- utilidades
 def view(ax, place, v):
-    G.draw_view(ax, place, v, lw=2.2, hidden=True, cyl=False)
+    G.draw_view(ax, place, v, lw=2.2, hidden=True, cyl=True)
 
 
 def groups(place, v, idx, suf):
@@ -136,7 +136,7 @@ def new_fig(title, sub):
     ax = fig.add_axes([0.0, 0.035, 1.0, 0.85], facecolor=BG)
     fig.text(0.02, 0.955, title, fontsize=30, color=INK, ha="left", va="center")
     fig.text(0.02, 0.905, sub, fontsize=15, color="#333", ha="left", va="center")
-    fig.text(0.02, 0.012, f"Tuerca hexagonal (prisma): s = {G.S:.2f} · e = {G.E:.2f} · m = {G.M:.2f} cm · tercer diedro · escala 1:1 · "
+    fig.text(0.02, 0.012, f"Tuerca hexagonal: s = {G.S:.2f} · e = {G.E:.2f} · m = {G.M:.2f} cm · Ø agujero ≈ {G.D_BORE:.1f} cm (estimado) · tercer diedro · escala 1:1 · "
              f"eje de referencia a {T.D_REF:g} cm de la pieza · LOS1 a {T.AUX_GAP1:g} cm del alzado · LOS2 a {T.AUX_GAP2:g} cm de la auxiliar 1",
              fontsize=11, color="#555")
     return fig, ax
@@ -153,7 +153,7 @@ def iso_inset(fig, rect, idx):
         for b in range(a + 1, 8):
             if np.sum(np.abs(box[a] - box[b]) > 1e-9) == 1:
                 q = place(box[[a, b]]); ax.plot(q[:, 0], q[:, 1], color=TEAL, lw=0.7)
-    G.draw_view(ax, place, v, lw=1.8, cyl=False)
+    G.draw_view(ax, place, v, lw=1.8, cyl=True)
     c = place(V).mean(axis=0)
     for i in idx:
         p = place(V[i])[0]
