@@ -35,9 +35,11 @@ iso = Image.open(os.path.join(SCR, "iso_rot.jpg"))
 iso.crop((612, 420, 4060, 2900)).resize((1700, round(2480 * 1700 / 3448)), Image.LANCZOS).save(os.path.join(IMG, "iso_jose.jpg"), quality=86)
 I_ISO = os.path.join(IMG, "iso_jose.jpg")
 I_VISTAS = trim(f"{VA}/paso_1_vistas_principales.png", os.path.join(IMG, "vistas.png"), crop=(0, 230, 2240, 1200))
-I_PARC = trim(f"{VA}/tablero_paso_4_LAMINA_PARCIAL.png", os.path.join(IMG, "parcial.png"), crop=(0, 230, 2850, 1460))
-I_TOTAL = trim(f"{VA}/tablero_paso_6_LAMINA_TOTAL.png", os.path.join(IMG, "total.png"), crop=(0, 230, 2850, 1460))
-I_PASO5 = trim(f"{VA}/tablero_paso_5_parcial_a_total.png", os.path.join(IMG, "paso5.png"), crop=(0, 230, 2850, 1460))
+I_PARC = trim(f"{VA}/limpias/1_lamina_parcial.png", os.path.join(IMG, "parcial.png"), crop=(0, 200, 2850, 1470))
+I_TOTAL = trim(f"{VA}/limpias/2_lamina_total.png", os.path.join(IMG, "total.png"), crop=(0, 200, 2850, 1470))
+I_PASO5 = trim(f"{VA}/limpias/3_parcial_a_total.png", os.path.join(IMG, "paso5.png"), crop=(0, 200, 2850, 1470))
+I_D1 = trim(f"{VA}/limpias/4_distancias_auxiliar1.png", os.path.join(IMG, "dist1.png"), crop=(0, 200, 2850, 1470))
+I_D2 = trim(f"{VA}/limpias/5_distancias_auxiliar2.png", os.path.join(IMG, "dist2.png"), crop=(0, 200, 2850, 1470))
 I_ROT = trim(f"{VA}/paso_7_rotacion_3d.png", os.path.join(IMG, "rotacion.png"), crop=(0, 330, 2240, 1150))
 I_VERIF = trim(f"{VA}/paso_6_verificacion.png", os.path.join(IMG, "verificacion.png"), crop=(0, 100, 2240, 1200))
 
@@ -205,7 +207,7 @@ notes = [
     P("[ ] Confirmar los roles de Jose y Davinson.", "cap"),
     P("[ ] Reemplazar las imágenes de referencia por fotos de sus láminas (de frente, con buena luz, sin sombras).", "cap"),
     P("[ ] Bocetos descriptivos explicativo, informativo y storyboard (figuras 11 a 13).", "cap"),
-    P("[ ] Capturas de SolidWorks (figuras 17 a 19) y anexos A y D.", "cap"),
+    P("[ ] Capturas de SolidWorks (figuras 17 a 19) y anexos A y F.", "cap"),
     P("[ ] Confirmar Ø del agujero roscado (aquí 3,8 cm, estimado) y del agujero adicional.", "cap"),
     P("[ ] Revisar las conclusiones, verificar las referencias y poner la fecha de entrega.", "cap"),
     P("[ ] Preguntar al profesor: la Tabla 1 evalúa «proyecciones auxiliares» y «escuadras» en los cuatro bocetos; "
@@ -347,7 +349,7 @@ aux = [
 aux += figure(14, "Proyección auxiliar parcial de la cara inclinada ABCD", img=I_PARC, ref=True, width=16.5,
               nota=[("Realizado por ", ""), ("[nombre (código)]", "h"), (". Escala 1:1.", "")])
 aux += figure(15, "Proyección auxiliar total de la tuerca", img=I_TOTAL, ref=True, width=16.5,
-              nota=[("Realizado por ", ""), ("[nombre (código)]", "h"), (". La cara ABCD (resaltada) es la proyección parcial de la que parte la total.", "")])
+              nota=[("Realizado por ", ""), ("[nombre (código)]", "h"), (". La construcción parte de la cara ABCD (proyección parcial).", "")])
 aux += figure(16, "Rotación general de la tuerca en 3D (giros de 0°, 90°, 180° y 270°)", img=I_ROT, ref=True, width=16.0,
               nota=[("Realizado por ", ""), ("[nombre (código)]", "h")])
 after(E[190], aux)
@@ -432,10 +434,14 @@ anex += figure("A", "Medición de la tuerca con calibrador", label="Anexo", plac
                "calibrador (pie de rey).]", nota=[("Realizado por ", ""), ("[nombre (código)]", "h")])
 anex += figure("B", "Construcción paso a paso: de la proyección auxiliar parcial a la total", label="Anexo", img=I_PASO5, ref=True, width=16.5,
                nota="En verde, las líneas de origen de la proyección parcial (cara ABCD); en azul, las añadidas para la proyección total.")
-anex += figure("C", "Verificación numérica de las proyecciones auxiliares", label="Anexo", img=I_VERIF, width=15.5,
+anex += figure("C", "Distancias de la auxiliar 1: se toman del perfil, desde el eje de referencia (regla de las dos vistas)", label="Anexo",
+               img=I_D1, ref=True, width=16.5, nota="Delanteros (A, B, E, F, G, H) a 1 cm de LOS1; traseros (C, D, I, J, K, L) a 4 cm.")
+anex += figure("D", "Distancias de la auxiliar 2: se toman del alzado, desde LOS1 (regla de las dos vistas)", label="Anexo",
+               img=I_D2, ref=True, width=16.5, nota="A, B, C, D a 3 cm de LOS2; E, H, I, L a 6,5 cm; F, G, J, K a 10 cm.")
+anex += figure("E", "Verificación numérica de las proyecciones auxiliares", label="Anexo", img=I_VERIF, width=15.5,
                nota=[("Elaboración propia con apoyo de un script en Python (numpy). ", ""),
                      ("[Opcional: inclúyanlo solo si lo pueden explicar.]", "h")])
-anex += figure("D", "Evidencia del trabajo grupal", label="Anexo", placeholder="[INSERTAR FOTOS — el grupo trabajando: reuniones, bocetos, "
+anex += figure("F", "Evidencia del trabajo grupal", label="Anexo", placeholder="[INSERTAR FOTOS — el grupo trabajando: reuniones, bocetos, "
                "selección del modelo.]", nota=[("Realizado por ", ""), ("[nombre (código)]", "h")])
 after(E[246], anex)
 drop(E[247], E[248], E[249], E[250])
