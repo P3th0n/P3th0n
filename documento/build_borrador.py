@@ -315,8 +315,8 @@ set_text(E[169], [("Nota. ", "i"), ("Realizado por Davinson Guzman Trujillo (104
 
 # =========================================================================== 3.2.1 (figuras 9–13)
 desc = [P([("Según la evaluación de la Tabla 1, se desarrolló la tuerca para pernos. Sus bocetos descriptivos se elaboraron en formato "
-            "estándar y con instrumentos de dibujo técnico. Las medidas de trabajo son: distancia entre caras s = 7 cm, distancia entre "
-            "vértices e = 8,08 cm (e = s / cos 30°), lado del hexágono a = 4,04 cm y espesor m = 3 cm. En las figuras 9 a 13 se "
+            "estándar y con instrumentos de dibujo técnico. Las medidas de trabajo son las de la caja envolvente del isométrico: 7 cm de ancho, "
+            "7 cm de alto y 3 cm de espesor; el hexágono se construye con sus vértices superiores e inferiores a 1,75 cm de cada esquina. En las figuras 9 a 13 se "
             "presentan la isometría, las vistas principales y los bocetos descriptivos explicativo, informativo y storyboard. ", ""),
            ("[Confirmar Ø del agujero roscado (3,8 cm estimado) y del agujero adicional.]", "h")])]
 desc += figure(9, "Isometría de la tuerca para pernos construida con caja envolvente", img=I_ISO, width=13.5,
@@ -325,8 +325,8 @@ desc += figure(10, "Vistas principales de la tuerca: alzado, planta y perfil (te
                nota=[("Realizado por ", ""), ("[nombre (código)]", "h")])
 desc += figure(11, "Boceto descriptivo explicativo de la tuerca", placeholder="[INSERTAR FOTO — partes de la tuerca: cuerpo hexagonal, agujero "
                "roscado y agujero adicional, con flechas, llamadas de texto y despiece preliminar.]", nota=[("Realizado por ", ""), ("[nombre (código)]", "h")])
-desc += figure(12, "Boceto descriptivo informativo de la tuerca", placeholder="[INSERTAR FOTO — tuerca con cotas principales (s = 7 cm, "
-               "e = 8,08 cm, m = 3 cm, Ø de los agujeros) y notas técnicas.]", nota=[("Realizado por ", ""), ("[nombre (código)]", "h")])
+desc += figure(12, "Boceto descriptivo informativo de la tuerca", placeholder="[INSERTAR FOTO — tuerca con cotas principales (7 × 7 × 3 cm, "
+               "Ø de los agujeros) y notas técnicas.]", nota=[("Realizado por ", ""), ("[nombre (código)]", "h")])
 desc += figure(13, "Boceto descriptivo storyboard de la tuerca", placeholder="[INSERTAR FOTO — secuencia de uso: 1) roscar la tuerca en el "
                "perno, 2) apretar, 3) pasar el pasador o alambre de seguridad por el agujero adicional.]", nota=[("Realizado por ", ""), ("[nombre (código)]", "h")])
 after(E[172], desc)
@@ -335,16 +335,15 @@ drop(*E[173:190])
 # =========================================================================== 3.2.2 (figuras 14–16)
 aux = [
     P("La cara lateral ABCD de la tuerca es un plano inclinado: es perpendicular al plano frontal, por lo que en el alzado se ve de canto "
-      "(segmento A_{F}D_{F} – B_{F}C_{F}, a 60° de la horizontal), mientras que en la planta y en el perfil aparece deformada, con el 50 % y el "
-      "86,6 % de su área real, respectivamente. Para obtener su verdadera magnitud se trazó la línea de visión LOS1 perpendicular a la cara y la "
+      "(segmento A_{F}D_{F} – B_{F}C_{F}, a 63,4° de la horizontal), mientras que en la planta y en el perfil aparece deformada, con el 44,7 % y el "
+      "89,4 % de su área real, respectivamente. Para obtener su verdadera magnitud se trazó la línea de visión LOS1 perpendicular a la cara y la "
       "línea de pliegue paralela a ella; desde cada vértice se trazaron líneas de origen a 90° y sobre ellas se llevaron las distancias medidas "
       "en el perfil desde el eje de referencia."),
-    P("La proyección auxiliar parcial (figura 14) muestra solo la cara ABCD en verdadera magnitud: un rectángulo de 4,04 × 3,00 cm (12,12 cm²). "
+    P("La proyección auxiliar parcial (figura 14) muestra solo la cara ABCD en verdadera magnitud: un rectángulo de 3,91 × 3,00 cm (11,74 cm²). "
       "Con una segunda línea de visión, LOS2, trazada desde la auxiliar 1, la cara vuelve a verse de canto; en esta vista las distancias se "
       "toman en el alzado desde LOS1."),
     P("La proyección auxiliar total (figura 15) se obtuvo a partir de la parcial, proyectando con el mismo procedimiento los vértices restantes "
-      "(E a L). En la auxiliar 1 la tuerca se ve como tres bandas de 2,02, 4,04 y 2,02 cm, cuya suma coincide con la distancia entre vértices "
-      "(8,08 cm), lo que comprueba la construcción. La figura 16 muestra la rotación general de la pieza en 3D."),
+      "(E a L); en la auxiliar 2 sus distancias a LOS2 son 3, 6,13 y 9,26 cm, tomadas del alzado desde LOS1 (regla de las dos vistas). La figura 16 muestra la rotación general de la pieza en 3D."),
 ]
 aux += figure(14, "Proyección auxiliar parcial de la cara inclinada ABCD", img=I_PARC, ref=True, width=16.5,
               nota=[("Realizado por ", ""), ("[nombre (código)]", "h"), (". Escala 1:1.", "")])
@@ -373,8 +372,7 @@ after(E[196], [P([("De acuerdo con la Tabla 1, la alternativa con mayor puntuaci
                   ("[Llenen la tabla con honestidad: si gana otro boceto, ajusten este párrafo.]", "h")])])
 
 # =========================================================================== 3.3 (SolidWorks, figuras 17–19)
-set_text(E[200], [("La tuerca se modeló en SolidWorks a partir de un croquis en el plano alzado: un polígono de seis lados con distancia entre "
-                   "caras de 7 cm, extruido 3 cm (Extruir saliente/base). El agujero roscado se creó con el Asistente para taladro y el agujero "
+set_text(E[200], [("La tuerca se modeló en SolidWorks a partir de un croquis en el plano alzado: el hexágono dentro de un cuadrado de 7 × 7 cm (vértices a 1,75 cm de las esquinas), extruido 3 cm (Extruir saliente/base). El agujero roscado se creó con el Asistente para taladro y el agujero "
                    "adicional de la cara superior, con un croquis circular y la operación Extruir corte. ", ""),
                   ("[Ajustar a las operaciones que realmente usaron.]", "h")])
 to_body(E[200])
@@ -398,8 +396,8 @@ concl = [
     P("La elaboración de mapas mentales y bocetos de exploración permitió a cada integrante generar y comparar ideas de piezas mecánicas de su "
       "entorno, y pasar de una idea abstracta a una forma concreta mediante el pensamiento divergente."),
     P("Los bocetos descriptivos y las proyecciones auxiliares mostraron que una cara inclinada solo aparece en verdadera magnitud cuando se observa "
-      "perpendicularmente a ella: la cara ABCD de la tuerca, que en el alzado se ve de canto y en la planta con la mitad de su área, se obtuvo con "
-      "sus dimensiones reales (4,04 × 3,00 cm) en la vista auxiliar."),
+      "perpendicularmente a ella: la cara ABCD de la tuerca, que en el alzado se ve de canto y en la planta con menos de la mitad de su área, se obtuvo con "
+      "sus dimensiones reales (3,91 × 3,00 cm) en la vista auxiliar."),
     P([("El modelado en SolidWorks permitió ", ""), ("[completar: precisión del modelo, renderizado y plano obtenidos]", "h"), (".", "")]),
     P([("El trabajo colaborativo, con roles definidos y una tabla de criterios para seleccionar el modelo, mejoró la comunicación y la toma de "
         "decisiones del grupo; ", ""), ("[completar con una dificultad real y cómo la resolvieron]", "h"), (".", "")]),
@@ -437,7 +435,7 @@ anex += figure("B", "Construcción paso a paso: de la proyección auxiliar parci
 anex += figure("C", "Distancias de la auxiliar 1: se toman del perfil, desde el eje de referencia (regla de las dos vistas)", label="Anexo",
                img=I_D1, ref=True, width=16.5, nota="Delanteros (A, B, E, F, G, H) a 1 cm de LOS1; traseros (C, D, I, J, K, L) a 4 cm.")
 anex += figure("D", "Distancias de la auxiliar 2: se toman del alzado, desde LOS1 (regla de las dos vistas)", label="Anexo",
-               img=I_D2, ref=True, width=16.5, nota="A, B, C, D a 3 cm de LOS2; E, H, I, L a 6,5 cm; F, G, J, K a 10 cm.")
+               img=I_D2, ref=True, width=16.5, nota="A, B, C, D a 3 cm de LOS2; E, H, I, L a 6,13 cm; F, G, J, K a 9,26 cm.")
 anex += figure("E", "Verificación numérica de las proyecciones auxiliares", label="Anexo", img=I_VERIF, width=15.5,
                nota=[("Elaboración propia con apoyo de un script en Python (numpy). ", ""),
                      ("[Opcional: inclúyanlo solo si lo pueden explicar.]", "h")])

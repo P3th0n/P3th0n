@@ -55,11 +55,14 @@ def unit(v):
 # ----------------------------------------------------------------------------
 # 1. SÓLIDO: prisma hexagonal (vértices, caras, normales por producto cruz)
 # ----------------------------------------------------------------------------
-R = S / np.sqrt(3.0)                 # radio circunscrito = e/2 = lado a   (hexágono regular)
-E = 2.0 * R                          # distancia entre vértices opuestos (e = s / cos 30°)
-cx, cz = R, S / 2.0                  # eje de la tuerca: recta paralela a Y por (cx, cz)
-theta = np.deg2rad(60.0 * np.arange(6))   # vértices a 0°,60°,...  -> caras planas arriba y abajo
-Vf = np.array([[cx + R * np.cos(t), 0.0, cz + R * np.sin(t)] for t in theta])   # cara frontal (y=0)
+E = 7.0                              # ancho entre vértices: caja de 7 × 7 × 3 (medidas del isométrico)
+Q1 = E / 4.0                         # método de la caja: vértices de arriba y abajo a 1/4 del ancho
+R = E / 2.0                          # semiancho
+cx, cz = E / 2.0, S / 2.0            # eje de la tuerca: recta paralela a Y por (cx, cz)
+LADO_SUP = E - 2 * Q1                # lados superior e inferior (3,5 cm)
+LADO_INC = float(np.hypot(Q1, S / 2))   # lados inclinados (3,91 cm): hexágono NO regular
+Vf = np.array([[E, 0.0, cz], [E - Q1, 0.0, S], [Q1, 0.0, S],
+               [0.0, 0.0, cz], [Q1, 0.0, 0.0], [E - Q1, 0.0, 0.0]])          # cara frontal (y=0)
 Vb = Vf + np.array([0.0, M, 0.0])                                               # cara posterior (y=M)
 V = np.vstack([Vf, Vb])             # 12 vértices: 0..5 delante, 6..11 detrás
 ZMAX, XMAX = V[:, 2].max(), V[:, 0].max()
@@ -515,7 +518,7 @@ def page_principales():
     dim(ax, (0, 0), (0, S), f"s = {S:.2f}", off=1.1)
     dim(ax, (cx - D_BORE / 2, cz), (cx + D_BORE / 2, cz), f"Ø {D_BORE:.2f}", off=0.0, fs=8.5)
     ytop = ZMAX + GAP
-    dim(ax, (cx - R / 2, ytop + M), (cx + R / 2, ytop + M), f"a = {R:.2f}", off=0.9)
+    dim(ax, (Q1, ytop + M), (E - Q1, ytop + M), f"{LADO_SUP:.2f}", off=0.9)
     dim(ax, (XMAX, ytop), (XMAX, ytop + M), f"m = {M:.2f}", off=-1.1)
     if EXTRA is not None:
         dim(ax, (cx - EXTRA.r, ytop + EXTRA.yc), (cx + EXTRA.r, ytop + EXTRA.yc), f"Ø {D_EXTRA:.1f}", off=0.0, fs=7.5)
@@ -555,7 +558,7 @@ def page_identificar():
         f"n = (AB × AD)/|AB × AD|\n  = {fmt(c['n_cross'])}\n\n"
         f"n · Y = {c['n_dot_Y']:+.1e}  ⇒  n ⊥ Y\n"
         "   ⇒ la cara es perpendicular al plano\n      frontal (se ve de canto).\n\n"
-        f"Ángulo de A_F B_F con la horizontal:\n  {c['ang_edge']:.2f}°   (hexágono regular → 60°)\n\n"
+        f"Ángulo de A_F B_F con la horizontal:\n  {c['ang_edge']:.2f}°   (caja 7 × 7 → 63,43°)\n\n"
         "LOS1 = n  (la mirada debe ser ⊥ a la cara)\n"
         f"Área real de ABCD = {c['A3']:.4f} cm²\n"
         f"Área vista en el alzado = {c['A_front']:.4f} cm²")
@@ -571,7 +574,7 @@ def page_construccion():
     pt = place_top(V)
     dim(ax, (0, ZMAX + GAP), (0, ZMAX + GAP + M), f"y = {M:.2f}", off=1.0, fs=8.5, color=C_PROJ)
     finish(ax, arrs)
-    steps = ("1.  En el alzado la cara ABCD se ve de canto: segmento A_F B_F (a 60°).\n"
+    steps = ("1.  En el alzado la cara ABCD se ve de canto: segmento A_F B_F (a 63,43°).\n"
              f"2.  Trazar la línea de pliegue L.T.₁ (eje de referencia) PARALELA a A_F B_F, a {AUX_GAP:g} cm de la pieza (distancia cómoda).\n"
              "3.  Desde A_F y B_F trazar las proyectantes PERPENDICULARES a L.T.₁ (marca de 90°). Dirección = LOS1.\n"
              "4.  En la planta medir las profundidades desde el eje de referencia (y = 0): A, B → 0,00 · C, D → 3,00 cm.\n"
@@ -614,7 +617,7 @@ def page_parcial():
 
 def page_total():
     fig = new_fig("Paso 5 · Vista auxiliar TOTAL (toda la pieza mirada a lo largo de LOS1)",
-                  "Se proyectan todos los vértices; aristas ocultas y el taladro con trazo discontinuo. Las tres bandas miden a/2 | a | a/2.")
+                  "Se proyectan todos los vértices; aristas ocultas y el taladro con trazo discontinuo. Se miden las bandas que forman las caras laterales.")
     a1 = fig.add_axes([0.02, 0.07, 0.60, 0.82]); a2 = fig.add_axes([0.63, 0.22, 0.36, 0.60])
     arrs = draw_layout(a1, "total", top=False)
     finish(a1, arrs)
@@ -630,9 +633,8 @@ def page_total():
     a2.set_aspect("equal"); a2.axis("off")
     a2.set_xlim(xs[0] - 1.5, xs[-1] + 3); a2.set_ylim(ybot - 2.5, ytop + 2.5)
     a2.set_title("Vista auxiliar total (imagen para leerse)", fontsize=10)
-    assert abs((xs[-1] - xs[0]) - E) < 1e-9
     textbox(fig, [0.64, 0.07, 0.34, 0.12],
-            f"Suma de bandas = a/2 + a + a/2 = {xs[-1] - xs[0]:.4f} = e  ✔\nLas dos líneas discontinuas verticales son el taladro (Ø {D_BORE:.1f} cm).",
+            f"Ancho total de la vista = {xs[-1] - xs[0]:.4f} cm\nLas dos líneas discontinuas verticales son el taladro (Ø {D_BORE:.1f} cm).",
             fs=9.5)
     return fig
 

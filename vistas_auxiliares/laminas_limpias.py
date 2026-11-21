@@ -362,7 +362,7 @@ def lamina_circunferencia():
     fig.text(0.02, 0.135, "Distancia de cada punto a LOS1 en el alzado  =  distancia a LOS2 en la auxiliar 2  (cm):", fontsize=15, color=DIM)
     fig.text(0.02, 0.10, "   ".join(f"{k + 1}: {v:.2f}".replace(".", ",") for k, v in enumerate(d)), fontsize=15, color=DIM)
     fig.text(0.02, 0.065, f"Auxiliar 1: el borde se ve de canto (segmento de {2 * c.r:.2f} cm a 1 cm de LOS1).   "
-             f"Auxiliar 2: elipse de eje mayor {2 * a_semi:.2f} cm (diámetro real) y eje menor {2 * b_semi:.2f} cm = Ø · cos 30°".replace(".", ","),
+             f"Auxiliar 2: elipse de eje mayor {2 * a_semi:.2f} cm (diámetro real) y eje menor {2 * b_semi:.2f} cm = Ø · |cos(LOS2, eje)|".replace(".", ","),
              fontsize=15, color=DIM)
     frame(ax, [T.pF(V), T.p1(V), T.p2(V)], pad=(2.4, 3.0, 3.2, 2.6))
     place_labels(fig, ax, reqs)

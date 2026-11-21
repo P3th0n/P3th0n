@@ -38,6 +38,19 @@ EX = G.EXTRA                                   # agujero de la cara superior (Ø
 DX = G.D_EXTRA
 TH8 = np.deg2rad(np.arange(0, 360, 45))
 TOP8 = [(cx + EX.r * np.cos(t), EX.yc + EX.r * np.sin(t)) for t in TH8]
+X1, X2 = G.Q1, E - G.Q1                        # vértices de arriba/abajo (método de la caja)
+SUP, INC = G.LADO_SUP, G.LADO_INC
+_ab = T.pF(V[[G.iB, G.iA]]); _d = _ab[1] - _ab[0]
+ANG = float(np.degrees(np.arctan2(_d[1], abs(_d[0]))))  # inclinación de A_F B_F
+D2 = {}
+for _i in range(6):
+    D2.setdefault(round(float(T.H1 - T.pF(V[_i])[0] @ T.N1), 2), []).append(T.LET[_i] + ", " + T.LET[_i + 6])
+D2_TXT = "; ".join(f"{', '.join(v)} = {fmt(k)} cm" for k, v in sorted(D2.items()))
+_vis, _hid = G.visible_edges(T.LOS2)
+HID2 = ", ".join(sorted(f"{T.LET[a]}₂{T.LET[b]}₂" for a, b in _hid))
+_vis1, _hid1 = G.visible_edges(T.LOS1)
+HID1 = ", ".join(sorted(f"{T.LET[a]}₁{T.LET[b]}₁" for a, b in _hid1))
+_rim = T.p2(G.CILS[0].rim(0)[:-1]); ELL = (np.ptp(_rim[:, 0]), np.ptp(_rim[:, 1]))
 TOP8_TXT = "   ".join(f"{k + 1}: x={fmt(x)} · aux1 {fmt(T.D_REF + y)} · aux2 {fmt(T.H1 - (x * T.N1[0] + S * T.N1[1]))}"
                        for k, (x, y) in enumerate(TOP8))
 
@@ -125,7 +138,8 @@ def portada():
         y -= 0.045
     info = ["Materiales: escuadras de 45° y de 30-60°, regla larga o regla T, compás, portaminas 0,5 mm (2H para construcción, HB para repasar), "
             "borrador y plantilla de curvas (para las elipses de la hoja 4).",
-            f"Datos de la pieza: s = 7 cm (entre caras), e = 8,08 cm (entre vértices), a = 4,04 cm (lado), m = 3 cm (espesor), "
+            f"Datos de la pieza (caja de tu isométrico): 7 cm de ancho × 7 cm de alto × 3 cm de espesor. Hexágono por el método de la caja: "
+            f"vértices de arriba y abajo a {fmt(X1)} cm de cada esquina (lado superior {fmt(SUP)} cm, lados inclinados {fmt(INC)} cm). "
             f"Ø agujero = {G.D_BORE:.1f} cm (ESTIMADO: mídelo). Agujero de la cara superior: Ø {DX:.1f} cm (ESTIMADO de tu isométrico), centrado en esa cara "
             "y atravesando la pared hasta el agujero roscado.",
             "Convenciones: tercer diedro (planta encima del alzado, lateral derecha a su derecha), unidades en cm. "
@@ -148,29 +162,28 @@ def pasos_hoja1():
     return text_page(
         "Hoja 1 · Vistas principales con cotas  (A4 horizontal, escala 1:1)",
         "Tercer diedro: la vista superior va ENCIMA del alzado y la lateral derecha a su DERECHA, alineadas con proyectantes. "
-        "El origen O es la esquina inferior izquierda del recuadro que encierra el alzado.",
+        "El origen O es la esquina inferior izquierda del recuadro de 7 × 7 que encierra el alzado.",
         ["Traza el marco a 1 cm del borde y el rótulo (14 × 3,5 cm abajo a la derecha). Título: «Tuerca para perno – Vistas principales», Nº 3.",
          f"Ubica O a {fmt(OX1)} cm del borde izquierdo y {fmt(OY1)} cm del borde inferior de la hoja.",
-         "ALZADO: recuadro guía fino de 8,08 × 7 cm desde O. En los lados superior e inferior marca 2,02 cm desde cada esquina; "
-         "en los lados izquierdo y derecho marca el punto medio (3,5 cm). Une los seis puntos: hexágono con caras planas arriba y abajo "
-         "(cada lado mide 4,04 cm y los lados inclinados van a 60°: compruébalo con la escuadra de 30-60).",
-         "Ejes del alzado (trazo-punto) por el centro (4,04 ; 3,5), sobresaliendo 0,5 cm. Agujero: circunferencia de radio 1,9 cm con centro en ese punto.",
-         "Proyectantes verticales finas hacia arriba desde x = 0 ; 2,02 ; 6,06 ; 8,08 (vértices) y x = 2,14 ; 5,94 (bordes del agujero).",
-         "VISTA SUPERIOR: 2 cm por encima del alzado, rectángulo de 8,08 × 3 cm. Líneas visibles verticales en x = 2,02 y 6,06 (aristas). "
-         "Líneas ocultas (trazos) en x = 2,14 y 5,94 (agujero). Eje vertical en x = 4,04.",
-         "Proyectantes horizontales hacia la derecha desde z = 0 ; 3,5 ; 7 (vértices) y z = 1,6 ; 5,4 (agujero).",
-         "VISTA LATERAL DERECHA: 2 cm a la derecha del alzado, rectángulo de 3 × 7 cm. Línea visible horizontal a 3,5 cm (arista del vértice). "
-         "Ocultas a 1,6 y 5,4 cm (agujero). Eje horizontal a 3,5 cm.",
-         f"AGUJERO DE ARRIBA (Ø {fmt(DX)} cm, estimado): en la vista superior, circunferencia de radio {fmt(EX.r)} con centro en x = 4,04 y a "
-         f"{fmt(EX.yc)} cm del borde de abajo de esa vista (borde delantero). En el alzado: dos líneas OCULTAS verticales en x = {fmt(cx - EX.r)} y "
-         f"{fmt(cx + EX.r)}, desde el borde superior hasta tocar la circunferencia del agujero grande. En la lateral: dos ocultas verticales a "
-         f"{fmt(EX.yc - EX.r)} y {fmt(EX.yc + EX.r)} cm de su borde izquierdo, desde arriba hasta 5,4 cm, unidas por una curva oculta que baja hasta "
-         f"{fmt(float(EX.zb(cx + EX.r)))} cm en el centro (es donde los dos agujeros se cruzan).",
+         f"ALZADO: recuadro guía fino de 7 × 7 cm desde O. En los lados superior e inferior marca {fmt(X1)} cm desde cada esquina; en los lados "
+         f"izquierdo y derecho marca el punto medio (3,5 cm). Une los seis puntos: hexágono con caras planas arriba y abajo (lado superior "
+         f"{fmt(SUP)} cm, lados inclinados {fmt(INC)} cm a {fmt(ANG)}° de la horizontal).",
+         f"Ejes del alzado (trazo-punto) por el centro (3,5 ; 3,5), sobresaliendo 0,5 cm. Agujero: circunferencia de radio {fmt(r)} cm con centro en ese punto.",
+         f"Proyectantes verticales finas hacia arriba desde x = 0 ; {fmt(X1)} ; {fmt(X2)} ; 7 (vértices), x = {fmt(cx - r)} ; {fmt(cx + r)} (agujero) "
+         f"y x = {fmt(cx - EX.r)} ; {fmt(cx + EX.r)} (agujero de arriba).",
+         f"VISTA SUPERIOR: 2 cm por encima del alzado, rectángulo de 7 × 3 cm. Líneas visibles verticales en x = {fmt(X1)} y {fmt(X2)} (aristas). "
+         f"Ocultas (trazos) en x = {fmt(cx - r)} y {fmt(cx + r)} (agujero). Eje vertical en x = 3,5.",
+         f"Proyectantes horizontales hacia la derecha desde z = 0 ; 3,5 ; 7 (vértices) y z = {fmt(cz - r)} ; {fmt(cz + r)} (agujero).",
+         f"VISTA LATERAL DERECHA: 2 cm a la derecha del alzado, rectángulo de 3 × 7 cm. Línea visible horizontal a 3,5 cm (arista del vértice). "
+         f"Ocultas a {fmt(cz - r)} y {fmt(cz + r)} cm (agujero). Eje horizontal a 3,5 cm.",
+         f"AGUJERO DE ARRIBA (Ø {fmt(DX)} cm, estimado): en la vista superior, circunferencia de radio {fmt(EX.r)} con centro en x = 3,5 y a "
+         f"{fmt(EX.yc)} cm del borde de abajo de esa vista. En el alzado: dos ocultas verticales en x = {fmt(cx - EX.r)} y {fmt(cx + EX.r)}, desde el borde "
+         f"superior hasta tocar la circunferencia del agujero grande. En la lateral: dos ocultas verticales a {fmt(EX.yc - EX.r)} y {fmt(EX.yc + EX.r)} cm "
+         f"de su borde izquierdo, desde arriba hasta {fmt(cz + r)} cm, unidas por una curva oculta que baja hasta {fmt(float(EX.zb(cx + EX.r)))} cm en el centro.",
          "Repasa: visibles gruesas, ocultas en trazos, ejes en trazo-punto. Deja las proyectantes muy finas.",
-         "COTAS (flechas cerradas, número sobre la línea): e = 8,08 bajo el alzado; s = 7 a la izquierda; Ø 3,8 en el agujero; "
-         f"a = 4,04 sobre la vista superior; Ø {fmt(DX)} y su posición ({fmt(EX.yc)} cm del borde delantero) en la vista superior; "
-         "m = 3 en la vista superior y en la lateral; s = 7 a la derecha de la lateral."],
-        extra=["Comprobación rápida: la vista superior muestra tres bandas de 2,02 + 4,04 + 2,02 = 8,08 cm; la lateral, una línea en la mitad."])
+         f"COTAS (flechas cerradas, número sobre la línea): 7 de ancho bajo el alzado; 7 de alto a la izquierda; Ø 3,8 en el agujero; {fmt(SUP)} "
+         f"(lado superior) sobre la vista superior; Ø {fmt(DX)} y su posición ({fmt(EX.yc)} cm) en la vista superior; 3 de espesor en la vista superior y en la lateral."],
+        extra=[f"Comprobación rápida: la vista superior muestra tres bandas de {fmt(X1)} + {fmt(SUP)} + {fmt(X1)} = 7 cm; la lateral, una línea en la mitad."])
 
 
 def plano_hoja1():
@@ -182,21 +195,21 @@ def plano_hoja1():
     yT = G.ZMAX + G.GAP; xR = G.XMAX + G.GAP
     sub.plot([-0.5, G.XMAX + 0.5], [cz, cz], **cc); sub.plot([cx, cx], [-0.5, G.ZMAX + 0.5], **cc)
     sub.plot([cx, cx], [yT - 0.5, yT + M + 0.5], **cc); sub.plot([xR - 0.5, xR + M + 0.5], [cz, cz], **cc)
-    for x in (0, A_ / 2, A_ / 2 + A_, E, cx - r, cx + r):
+    for x in (0, X1, X2, E, cx - r, cx + r):
         sub.plot([x, x], [G.ZMAX if x not in (cx - r, cx + r) else cz + r, yT], color=TEAL, lw=0.4)
     for z in (0, cz, S, cz - r, cz + r):
         sub.plot([G.XMAX if z in (0, cz, S) else cx + r, xR], [z, z], color=TEAL, lw=0.4)
-    G.dim(sub, (0, 0), (E, 0), "e = 8,08", off=-1.0, fs=8)
-    G.dim(sub, (0, 0), (0, S), "s = 7", off=1.0, fs=8)
+    G.dim(sub, (0, 0), (E, 0), fmt(E), off=-1.0, fs=8)
+    G.dim(sub, (0, 0), (0, S), fmt(S), off=1.0, fs=8)
     G.dim(sub, (cx - r, cz), (cx + r, cz), "Ø 3,8", off=0.0, fs=7)
-    G.dim(sub, (A_ / 2, yT + M), (A_ / 2 + A_, yT + M), "a = 4,04", off=0.8, fs=8)
+    G.dim(sub, (X1, yT + M), (X2, yT + M), fmt(SUP), off=0.8, fs=8)
     G.dim(sub, (cx - EX.r, yT + EX.yc), (cx + EX.r, yT + EX.yc), f"Ø {fmt(DX)}", off=0.0, fs=6)
     G.dim(sub, (cx + 1.25, yT), (cx + 1.25, yT + EX.yc), fmt(EX.yc), off=0.0, fs=6)
     for x in (cx - EX.r, cx + EX.r):
         sub.plot([x, x], [G.ZMAX, yT], color=TEAL, lw=0.4)
-    G.dim(sub, (E, yT), (E, yT + M), "m = 3", off=-0.9, fs=8)
-    G.dim(sub, (xR, 0), (xR + M, 0), "m = 3", off=-1.0, fs=8)
-    G.dim(sub, (xR + M, 0), (xR + M, S), "s = 7", off=-1.0, fs=8)
+    G.dim(sub, (E, yT), (E, yT + M), "3", off=-0.9, fs=8)
+    G.dim(sub, (xR, 0), (xR + M, 0), "3", off=-1.0, fs=8)
+    G.dim(sub, (xR + M, 0), (xR + M, S), fmt(S), off=-1.0, fs=8)
     for txt, xy in (("VISTA FRONTAL", (E / 2, -2.4)), ("VISTA SUPERIOR", (E / 2, yT + M + 1.6)), ("LATERAL DERECHA", (xR + M / 2, S + 0.6))):
         sub.text(*xy, txt, fontsize=7, fontfamily=BODY, color="0.35", ha="center")
     placement(ax, OX1, OY1, OX1 - 2.6, OY1 + S + 0.9, H)
@@ -261,25 +274,24 @@ def pasos_hoja2():
     return text_page(
         "Hoja 2 · Isométrico  (A4 horizontal, escala 1:1 — dibujo isométrico)",
         "En el dibujo isométrico las medidas se llevan REALES sobre los tres ejes: X (ancho) a 30° hacia abajo-derecha, Z (alto) vertical "
-        "e Y (profundidad) a 30° hacia arriba-derecha. Importante: tu hoja 2 tiene cotas 7 × 7; la caja del hexágono mide 8,08 (entre vértices) × 7 (entre caras).",
+        "e Y (profundidad) a 30° hacia arriba-derecha. Caja de 7 × 7 × 3 cm, como en tu hoja 2.",
         ["Marco a 1 cm y rótulo. Título: «Tuerca para perno – Isométrico», Nº 2.",
          f"Punto de partida O (esquina delantera inferior izquierda de la caja) a {fmt(OX2)} cm del borde izquierdo y {fmt(OY2)} cm del inferior.",
          "Desde O traza los tres ejes con la escuadra de 30-60: X a 30° hacia abajo-derecha, Z vertical, Y a 30° hacia arriba-derecha.",
-         "Caja envolvente (línea fina): 8,08 cm sobre X, 7 cm sobre Z y 3 cm sobre Y. Completa la caja con paralelas.",
-         "Hexágono en la cara delantera (la del plano X-Z): en las aristas inferior y superior marca 2,02 cm desde cada extremo; en las aristas "
+         "Caja envolvente (línea fina): 7 cm sobre X, 7 cm sobre Z y 3 cm sobre Y. Completa la caja con paralelas.",
+         f"Hexágono en la cara delantera (la del plano X-Z): en las aristas inferior y superior marca {fmt(X1)} cm desde cada extremo; en las aristas "
          "verticales marca el punto medio (3,5 cm). Une los seis puntos.",
-         "Cara trasera: desde cada vértice traza una paralela al eje Y de 3 cm y une los extremos. Las aristas que no se ven, en trazos (o bórralas si el profesor no las pide).",
-         "Agujero, método de 4 centros: centro C de la cara delantera a 4,04 cm sobre X y 3,5 cm sobre Z desde O. Dibuja un rombo de lado 3,8 cm "
-         "centrado en C, con lados paralelos a X y a Z.",
-         "Desde cada vértice obtuso del rombo (el de 120°) traza rectas a los puntos medios de los dos lados opuestos. Donde se cruzan esas rectas están "
-         "los centros de los arcos pequeños.",
-         "Arcos grandes: centro en cada vértice obtuso, de un punto medio al otro. Arcos pequeños: centro en cada cruce, entre los dos puntos medios cercanos. "
-         "Así obtienes la elipse del agujero.",
-         "Borde trasero del agujero: la misma elipse desplazada 3 cm sobre Y; dibuja solo la parte que se ve a través del agujero (o toda en trazos).",
-         f"AGUJERO DE ARRIBA (Ø {fmt(DX)} cm, estimado): en la cara superior (7 cm sobre O), su centro está a 4,04 cm sobre X y {fmt(EX.yc)} cm sobre Y. "
-         f"Dibuja un rombo de lado {fmt(DX)} cm con lados paralelos a X y a Y y haz el óvalo por el mismo método de 4 centros.",
+         "Cara trasera: desde cada vértice traza una paralela al eje Y de 3 cm y une los extremos. Las aristas que no se ven, en trazos (o bórralas).",
+         "Agujero grande, método de 4 centros: centro C de la cara delantera a 3,5 cm sobre X y 3,5 cm sobre Z desde O. Rombo de lado 3,8 cm centrado "
+         "en C, con lados paralelos a X y a Z.",
+         "Desde cada vértice obtuso del rombo (el de 120°) traza rectas a los puntos medios de los dos lados opuestos. Donde se cruzan están los centros "
+         "de los arcos pequeños.",
+         "Arcos grandes: centro en cada vértice obtuso, de un punto medio al otro. Arcos pequeños: centro en cada cruce. Así obtienes la elipse.",
+         "Borde trasero del agujero: la misma elipse desplazada 3 cm sobre Y; solo la parte que se ve (o toda en trazos).",
+         f"AGUJERO DE ARRIBA (Ø {fmt(DX)} cm, estimado): en la cara superior (7 cm sobre O), centro a 3,5 cm sobre X y {fmt(EX.yc)} cm sobre Y. "
+         f"Rombo de lado {fmt(DX)} cm con lados paralelos a X y a Y, y óvalo por el mismo método de 4 centros.",
          "Repasa lo visible y deja muy fina (o borra) la construcción."],
-        extra=["Comprobación: la diagonal mayor del rombo (entre vértices agudos) es la dirección larga de la elipse."])
+        extra=["Comprobación: la diagonal mayor de cada rombo (entre vértices agudos) es la dirección larga de su elipse."])
 
 
 def plano_hoja2():
@@ -293,7 +305,7 @@ def plano_hoja2():
                 q = iso(box[[a, b]]); sub.plot(q[:, 0], q[:, 1], color=TEAL, lw=0.5)
     G.draw_view(sub, iso, G.V_ISO, lw=LW, hidden=True, cyl=False)
     # marcas de 2,02 y 3,5 en la cara delantera
-    for p in ([A_ / 2, 0, 0], [A_ / 2 + A_, 0, 0], [A_ / 2, 0, S], [A_ / 2 + A_, 0, S], [0, 0, cz], [E, 0, cz]):
+    for p in ([X1, 0, 0], [X2, 0, 0], [X1, 0, S], [X2, 0, S], [0, 0, cz], [E, 0, cz]):
         q = iso(np.array(p))[0]; sub.plot(*q, "o", ms=2.5, color=RED)
     # óvalo de 4 centros (delantero visible, trasero oculto)
     for y, ls in ((0.0, "-"), (M, (0, (3, 2)))):
@@ -316,10 +328,10 @@ def plano_hoja2():
     for arc in arcs:
         sub.plot(arc[:, 0], arc[:, 1], color=INK, lw=LW)
     O = iso(np.zeros(3))[0]
-    G.dim(sub, iso(np.array([0, 0, 0]))[0], iso(np.array([E, 0, 0]))[0], "8,08", off=-0.8, fs=8)
+    G.dim(sub, iso(np.array([0, 0, 0]))[0], iso(np.array([E, 0, 0]))[0], fmt(E), off=-0.8, fs=8)
     G.dim(sub, iso(np.array([0, 0, 0]))[0], iso(np.array([0, 0, S]))[0], "7", off=0.8, fs=8)
     G.dim(sub, iso(np.array([E, 0, 0]))[0], iso(np.array([E, M, 0]))[0], "3", off=-0.7, fs=8)
-    G.dim(sub, iso(np.array([0, 0, S]))[0], iso(np.array([A_ / 2, 0, S]))[0], "2,02", off=0.6, fs=7)
+    G.dim(sub, iso(np.array([0, 0, S]))[0], iso(np.array([X1, 0, S]))[0], fmt(X1), off=0.6, fs=7)
     sub.text(*(O + np.array([-0.5, -0.4])), "O", color=BLUE, fontsize=8, fontfamily=BODY)
     for p, nm in (([E * 1.06, 0, 0], "X"), ([E, M + 0.9, 0], "Y"), ([0, 0, S * 1.06], "Z")):
         q = iso(np.array(p))[0]; sub.text(*q, nm, color=BLUE, fontsize=8, fontfamily=BODY)
@@ -338,22 +350,21 @@ def pasos_hoja3():
         "Se proyecta SOLO la cara inclinada ABCD. Regla de las dos vistas: la distancia de un punto a la línea de pliegue en la vista nueva se mide "
         "en la vista que está dos lugares atrás, desde su propia línea de pliegue. Origen O = esquina inferior izquierda del recuadro del alzado.",
         ["Marco y rótulo. Título: «Proyecciones auxiliares parciales», Nº 4, Escala 1:1.",
-         f"ALZADO con O a {fmt(OX3)} cm del borde izquierdo y {fmt(OY3)} cm del inferior: hexágono y agujero igual que en la hoja 1.",
-         "EJE DE REFERENCIA: recta vertical 1,8 cm a la izquierda del alzado (x = −1,8). Es la línea desde donde se medirán las profundidades.",
+         f"ALZADO con O a {fmt(OX3)} cm del borde izquierdo y {fmt(OY3)} cm del inferior: hexágono y agujeros igual que en la hoja 1.",
+         "EJE DE REFERENCIA: recta vertical 1,8 cm a la izquierda del alzado (x = −1,8). Desde ella se miden las profundidades.",
          "PERFIL IZQUIERDO: rectángulo de 3 × 7 cm entre x = −2,8 y x = −5,8 (cara delantera de la tuerca a 1 cm del eje, la trasera a 4 cm). "
-         "Línea visible horizontal a 3,5 cm; ocultas a 1,6 y 5,4 cm. Proyectantes horizontales desde el alzado.",
-         "Rotula: en el alzado A_F D_F en el vértice (6,06 ; 7) y B_F C_F en (8,08 ; 3,5). En el perfil, A_L y B_L sobre el lado derecho (a 7 y 3,5 cm) "
-         "y D_L y C_L sobre el lado izquierdo.",
-         "LOS1: desde A_F y desde B_F traza rectas a 30° hacia arriba-derecha (perpendiculares al lado A_F B_F) y mide 3 cm sobre cada una. Une las dos marcas "
-         "y prolonga: esa es LOS1, paralela a la cara (inclinada 60°). Marca el 90°.",
+         "Proyectantes horizontales desde el alzado.",
+         f"Rotula: en el alzado A_F D_F en el vértice ({fmt(X2)} ; 7) y B_F C_F en (7 ; 3,5). En el perfil, A_L y B_L sobre el lado derecho y D_L y C_L sobre el izquierdo.",
+         f"LOS1: el lado A_F B_F está inclinado {fmt(ANG)}°. Sus perpendiculares tienen pendiente 1:2 (por cada 2 cm a la derecha, 1 cm hacia arriba). "
+         "Desde A_F y desde B_F traza esas perpendiculares y mide 3 cm sobre cada una. Une las dos marcas: esa es LOS1, paralela a la cara. Marca el 90°.",
          "Prolonga esas dos proyectantes unos 6 cm más allá de LOS1.",
-         "Con el compás, mide en el PERFIL desde el eje: cara delantera (A, B) = 1 cm; cara trasera (C, D) = 4 cm. Lleva cada distancia desde LOS1 sobre su "
-         "proyectante: A₁ y B₁ a 1 cm; D₁ (sobre la línea de A) y C₁ (sobre la de B) a 4 cm.",
-         "Une A₁-B₁-C₁-D₁: rectángulo de 4,04 × 3 cm = verdadera magnitud de la cara. Compruébalo con la regla.",
-         "LOS2: recta vertical a 16,66 cm a la derecha de O. Marca el 90°.",
+         "Con el compás, mide en el PERFIL desde el eje: cara delantera (A, B) = 1 cm; cara trasera (C, D) = 4 cm. Lleva cada distancia desde LOS1 sobre "
+         "su proyectante: A₁ y B₁ a 1 cm; D₁ (sobre la línea de A) y C₁ (sobre la de B) a 4 cm.",
+         f"Une A₁-B₁-C₁-D₁: rectángulo de {fmt(INC)} × 3 cm = verdadera magnitud de la cara. Compruébalo con la regla.",
+         f"LOS2: recta vertical a {fmt(T.H2)} cm a la derecha de O. Marca el 90°.",
          "Desde A₁, B₁, C₁ y D₁ traza proyectantes horizontales hacia la derecha, pasando LOS2.",
-         "Mide en el ALZADO desde LOS1: A, B, C y D están a 3 cm (la cara está de canto). Lleva 3 cm desde LOS2 sobre cada horizontal: A₂, B₂, C₂ y D₂ quedan en "
-         "una vertical — la cara se ve de canto.",
+         "Mide en el ALZADO desde LOS1: A, B, C y D están a 3 cm (la cara está de canto). Lleva 3 cm desde LOS2 sobre cada horizontal: A₂, B₂, C₂ y D₂ "
+         "quedan en una vertical — la cara se ve de canto.",
          "Repasa, rotula y escribe LOS1, LOS2 y «Eje de referencia»."])
 
 
@@ -378,25 +389,24 @@ def plano_aux(total):
 def pasos_hoja4():
     return text_page(
         "Hoja 4 · Proyección auxiliar total  (A3 horizontal, escala 1:1)",
-        "Es la hoja 3 aplicada a TODOS los vértices y al agujero. No cabe en A4 a escala 1:1 (mide unos 33 × 15 cm): usa A3, o A4 a escala 1:2 dividiendo todas las medidas entre 2.",
+        "Es la hoja 3 aplicada a TODOS los vértices y a los dos agujeros. No cabe en A4 a escala 1:1: usa A3, o A4 a escala 1:2 dividiendo todas las medidas entre 2.",
         [f"Marco y rótulo (Nº 5, A3). ALZADO con O a {fmt(OX4)} cm del borde izquierdo y {fmt(OY4)} cm del inferior; eje de referencia, perfil y LOS1 igual que en la hoja 3.",
-         "Proyectantes perpendiculares a LOS1 desde los SEIS vértices del alzado. En el alzado cada pareja coincide: A_F D_F, B_F C_F, E_F I_F, F_F J_F, G_F K_F, H_F L_F "
+         "Proyectantes (pendiente 1:2) desde los SEIS vértices del alzado. En el alzado cada pareja coincide: A_F D_F, B_F C_F, E_F I_F, F_F J_F, G_F K_F, H_F L_F "
          "(delantero primero, trasero después).",
          "AUXILIAR 1 (distancias del perfil): delanteros A, B, E, F, G, H a 1 cm de LOS1; traseros C, D, I, J, K, L a 4 cm.",
-         "Une: una línea larga a 1 cm (E₁, A₁F₁, B₁G₁, H₁) y otra a 4 cm (I₁, D₁J₁, C₁K₁, L₁), y cuatro transversales E₁-I₁, A₁-D₁, B₁-C₁ y H₁-L₁. Todas visibles. "
-         "Comprobación: tres bandas de 2,02 + 4,04 + 2,02 = 8,08 cm.",
-         "Agujero en la auxiliar 1: dos líneas OCULTAS paralelas a las transversales, entre 1 y 4 cm de LOS1, sobre las proyectantes que tocan (tangentes) la "
-         "circunferencia del alzado (puntos 5 y 11 de la hoja de apoyo).",
-         "LOS2 vertical a 16,66 cm de O. Proyectantes horizontales desde todos los puntos de la auxiliar 1.",
-         "AUXILIAR 2 (distancias del alzado desde LOS1): A, B, C, D = 3 cm; E, H, I, L = 6,5 cm; F, G, J, K = 10 cm. Llévalas desde LOS2 sobre cada horizontal.",
-         "Une hexágono delantero B-A-E-F-G-H, hexágono trasero C-D-I-J-K-L y laterales A-D, B-C, E-I, F-J, G-K, H-L. En TRAZOS: A₂E₂, E₂F₂ y E₂I₂; el resto visibles.",
-         "Agujero en la auxiliar 2: método de 12 puntos (página de apoyo). Elipse trasera visible, delantera oculta, unidas por dos verticales ocultas tangentes a "
-         "ambas. Ejes de la elipse: 3,80 (horizontal) × 3,29 cm (vertical).",
-         f"AGUJERO DE ARRIBA: la cara superior mira hacia LOS1, así que en la auxiliar 1 su borde se ve como ELIPSE VISIBLE; en la auxiliar 2 queda OCULTA. "
-         f"Proyecta 8 puntos de su borde (cada 45°) como vértices: en el alzado caen sobre el borde superior entre x = {fmt(cx - EX.r)} y {fmt(cx + EX.r)}. "
-         "Distancias (x en el alzado · a LOS1 en la auxiliar 1 · a LOS2 en la auxiliar 2) en la tabla de abajo.",
+         "Une hexágono delantero B-A-E-F-G-H, hexágono trasero C-D-I-J-K-L y laterales A-D, B-C, E-I, F-J, G-K, H-L. "
+         f"En trazos (ocultas): {HID1}. Si una oculta cae encima de una visible, manda la visible.",
+         "Agujero grande en la auxiliar 1: dos líneas OCULTAS entre 1 y 4 cm de LOS1, sobre las proyectantes que tocan (tangentes) la circunferencia del alzado.",
+         f"LOS2 vertical a {fmt(T.H2)} cm de O. Proyectantes horizontales desde todos los puntos de la auxiliar 1.",
+         f"AUXILIAR 2 (distancias del alzado desde LOS1): {D2_TXT}. Llévalas desde LOS2 sobre cada horizontal.",
+         f"Une igual que en la auxiliar 1. En trazos (ocultas): {HID2}.",
+         f"Agujero grande en la auxiliar 2: método de 12 puntos (página de apoyo). Elipse trasera visible, delantera oculta, unidas por dos verticales "
+         f"ocultas tangentes. Ejes de la elipse: {fmt(ELL[0])} (horizontal) × {fmt(ELL[1])} cm (vertical).",
+         f"AGUJERO DE ARRIBA: en la auxiliar 1 su borde se ve como ELIPSE VISIBLE (la cara superior mira hacia LOS1); en la auxiliar 2, OCULTA. Proyecta 8 "
+         f"puntos de su borde (cada 45°) como vértices: en el alzado caen sobre el borde superior entre x = {fmt(cx - EX.r)} y {fmt(cx + EX.r)}. Tabla abajo.",
          "Repasa y rotula todos los puntos con su subíndice (₁ y ₂)."],
-        extra=["Borde del agujero de arriba, 8 puntos (cm):"] + textwrap.wrap(TOP8_TXT, 120))
+        extra=["Borde del agujero de arriba, 8 puntos (x en el alzado · distancia a LOS1 en la auxiliar 1 · a LOS2 en la auxiliar 2, cm):"]
+        + textwrap.wrap(TOP8_TXT, 120))
 
 
 def apoyo_circulo():
@@ -404,9 +414,9 @@ def apoyo_circulo():
     img = plt.imread(os.path.join(HERE, "limpias", "6_circunferencia.png"))
     a = fig.add_axes([0.02, 0.24, 0.96, 0.74]); a.imshow(img); a.axis("off")
     steps = ["1. En el alzado divide la circunferencia del agujero en 12 partes de 30° (con la escuadra de 30-60 apoyada en el centro). Numera desde el 1 (a la derecha) en sentido antihorario.",
-             "2. Proyecta cada punto a la auxiliar 1 por su proyectante (perpendicular a LOS1): borde delantero a 1 cm de LOS1, borde trasero a 4 cm.",
+             "2. Proyecta cada punto a la auxiliar 1 por su proyectante (perpendicular a LOS1, pendiente 1:2): borde delantero a 1 cm de LOS1, borde trasero a 4 cm.",
              "3. Desde cada punto de la auxiliar 1 traza la horizontal hasta la auxiliar 2 y lleva desde LOS2 la distancia del alzado a LOS1 (tabla de arriba; es la misma para el borde delantero y el trasero).",
-             "4. Une los 12 puntos de cada borde con la plantilla de curvas: el trasero continuo y el delantero en trazos. Comprueba los ejes: 3,80 × 3,29 cm."]
+             "4. Une los 12 puntos de cada borde con la plantilla de curvas: el trasero continuo y el delantero en trazos. Comprueba los ejes: " + f"{fmt(ELL[0])} × {fmt(ELL[1])} cm."]
     y = 0.21
     for st in steps:
         for ln in textwrap.wrap(st, 160):
@@ -430,8 +440,8 @@ def explicativo_ref():
         a1.plot(arc[:, 0], arc[:, 1], color=INK, lw=1.2)
     calls = [((cx + 1.9 * np.cos(2.5), 0, cz + 1.9 * np.sin(2.5)), (-3.2, 9.5), f"Agujero roscado Ø {G.D_BORE:.1f} cm (estimado)"),
              ((cx, M / 2, S), (2.0, 13.5), f"Agujero superior Ø {fmt(DX)} cm (estimado):\npasador o alambre de seguridad"),
-             (V[[G.iA, G.iB, G.iC, G.iD]].mean(axis=0), (11.0, 9.0), "Cara inclinada ABCD (60°)"),
-             ((E / 2 - 2.5, 0, 0.6), (-3.2, -1.5), "Cuerpo hexagonal: s = 7 cm, e = 8,08 cm"),
+             (V[[G.iA, G.iB, G.iC, G.iD]].mean(axis=0), (11.0, 9.0), f"Cara inclinada ABCD ({fmt(ANG)}°)"),
+             ((E / 2 - 2.5, 0, 0.6), (-3.2, -1.5), "Cuerpo hexagonal en caja de 7 × 7 cm"),
              ((E, M / 2, cz), (11.0, 2.5), "Espesor m = 3 cm")]
     for p3, xy, txt in calls:
         p = iso(np.array(p3))[0]
@@ -461,7 +471,7 @@ def explicativo_ref():
     notes = ["Qué dibujar (3 figuras del documento):",
              "• Figura 11 — EXPLICATIVO: isométrico a mano alzada con flechas y notas que nombren cada parte y su función (como a la izquierda).",
              "• Figura 12 — INFORMATIVO: las vistas de la hoja 1 a mano alzada, con las cotas principales y notas técnicas (material: acero; "
-             "medidas s, e, m y Ø; tipo de rosca si lo conoces).",
+             "medidas 7 × 7 × 3 y Ø; tipo de rosca si lo conoces).",
              "• Figura 13 — STORYBOARD: 3 viñetas de uso (arriba a la derecha): acercar la tuerca al perno, roscar y apretar, pasar el pasador por el agujero adicional.",
              "Son bocetos: a mano alzada, proporcionados, con estilógrafo o lápiz, en formato con márgenes y rótulo."]
     y = 0.36
