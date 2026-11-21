@@ -328,10 +328,51 @@ def lamina_dist2():
     return fig
 
 
+def lamina_circunferencia():
+    """Método de los 12 puntos: cada punto del borde del agujero se proyecta como un vértice más."""
+    fig, ax = new_fig("Cómo se proyecta la circunferencia del agujero  (12 puntos)",
+                      "Se divide el borde en 12 puntos (cada 30°) y cada uno se proyecta con la regla de las dos vistas. Se muestra el borde delantero; el trasero es igual a 4 cm de LOS1.")
+    reqs = []
+    view(ax, T.pF, G.nF); view(ax, T.p1, T.LOS1); view(ax, T.p2, T.LOS2)
+    c = G.CILS[0]
+    phis = np.deg2rad(np.arange(0, 360, 30))
+    P = np.array([[G.cx + c.r * np.cos(f), 0.0, G.cz + c.r * np.sin(f)] for f in phis])     # borde delantero (y = 0)
+    qF, q1, q2 = T.pF(P), T.p1(P), T.p2(P)
+    along = np.concatenate([T.pF(V) @ T.T1, T.p1(V) @ T.T1])
+    fold_line(ax, T.H1 * T.N1 + (along.max() + 0.9) * T.T1, T.H1 * T.N1 + (along.min() - 0.9) * T.T1, "LOS1", reqs)
+    ys = np.concatenate((T.p1(V)[:, 1], T.p2(V)[:, 1]))
+    fold_line(ax, (T.H2, ys.min() - 1.0), (T.H2, ys.max() + 1.0), "LOS2", reqs)
+    for k in range(12):
+        ax.plot([qF[k, 0], q1[k, 0] + 0.8 * T.N1[0]], [qF[k, 1], q1[k, 1] + 0.8 * T.N1[1]], color=TEAL, lw=0.7, zorder=1)
+        ax.plot([q1[k, 0], q2[k, 0] + 0.8], [q1[k, 1], q2[k, 1]], color=TEAL, lw=0.7, zorder=1)
+    for q in (qF, q1, q2):
+        ax.plot(q[:, 0], q[:, 1], "o", color=RED, ms=4.5, zorder=7, ls="none")
+    # ejes de la elipse en la auxiliar 2 (borde delantero)
+    rim = T.p2(c.rim(0)[:-1]); C = rim.mean(axis=0)
+    cF = T.pF(np.array([G.cx, 0.0, G.cz]))[0]
+    for k in range(12):                       # número justo afuera de su punto, en dirección radial
+        for q, cen in ((qF[k], cF), (q2[k], C)):
+            u = (q - cen) / np.linalg.norm(q - cen)
+            ax.text(*(q + 0.42 * u), str(k + 1), color=RED, fontsize=13, ha="center", va="center", zorder=8,
+                    bbox=dict(fc=BG, ec="none", pad=0.15))
+    a_semi, b_semi = np.ptp(rim[:, 0]) / 2, np.ptp(rim[:, 1]) / 2
+    ax.plot([C[0] - a_semi, C[0] + a_semi], [C[1], C[1]], color=DIM, lw=1.0, ls=(0, (2, 2)), zorder=6)
+    ax.plot([C[0], C[0]], [C[1] - b_semi, C[1] + b_semi], color=DIM, lw=1.0, ls=(0, (2, 2)), zorder=6)
+    d = T.H1 - qF @ T.N1
+    fig.text(0.02, 0.135, "Distancia de cada punto a LOS1 en el alzado  =  distancia a LOS2 en la auxiliar 2  (cm):", fontsize=15, color=DIM)
+    fig.text(0.02, 0.10, "   ".join(f"{k + 1}: {v:.2f}".replace(".", ",") for k, v in enumerate(d)), fontsize=15, color=DIM)
+    fig.text(0.02, 0.065, f"Auxiliar 1: el borde se ve de canto (segmento de {2 * c.r:.2f} cm a 1 cm de LOS1).   "
+             f"Auxiliar 2: elipse de eje mayor {2 * a_semi:.2f} cm (diámetro real) y eje menor {2 * b_semi:.2f} cm = Ø · cos 30°".replace(".", ","),
+             fontsize=15, color=DIM)
+    frame(ax, [T.pF(V), T.p1(V), T.p2(V)], pad=(2.4, 3.0, 3.2, 2.6))
+    place_labels(fig, ax, reqs)
+    return fig
+
+
 def main():
     pages = [("1_lamina_parcial", lambda: lamina(False)), ("2_lamina_total", lambda: lamina(True)),
              ("3_parcial_a_total", lamina_parcial_a_total), ("4_distancias_auxiliar1", lamina_dist1),
-             ("5_distancias_auxiliar2", lamina_dist2)]
+             ("5_distancias_auxiliar2", lamina_dist2), ("6_circunferencia", lamina_circunferencia)]
     with PdfPages(os.path.join(OUT, "Laminas_limpias_tuerca.pdf")) as pdf:
         for name, fn in pages:
             fig = fn()
