@@ -369,10 +369,35 @@ def lamina_circunferencia():
     return fig
 
 
+def lamina_rotacion():
+    """Rotación general en 3D: la pieza girada 0°, 90°, 180° y 270° alrededor del eje vertical (matriz Rz)."""
+    fig = plt.figure(figsize=(19, 7), facecolor=BG)
+    fig.text(0.02, 0.92, "Rotación general de la pieza en 3D", fontsize=26, color=INK, ha="left", va="center")
+    fig.text(0.02, 0.84, "Girar la pieza un ángulo θ equivale a mirarla desde v' = Rz(−θ)·v (isométrica).", fontsize=14, color="#333")
+    for j, th in enumerate((0, 90, 180, 270)):
+        t = np.deg2rad(-th)
+        Rz = np.array([[np.cos(t), -np.sin(t), 0], [np.sin(t), np.cos(t), 0], [0, 0, 1]])
+        v = G.unit(Rz @ G.V_ISO)
+        u, w = G.basis_from_normal(v, G.Z)
+        ax = fig.add_axes([0.01 + j * 0.245, 0.02, 0.24, 0.74], facecolor=BG)
+        place = lambda P, u=u, w=w: G.proj(P, u, w)
+        G.draw_view(ax, place, v, lw=1.8, cyl=True)
+        P = place(V)
+        c = P.mean(axis=0)
+        for i in ALL:
+            if (V[i] - V.mean(axis=0)) @ v > -0.5:
+                p = place(V[i])[0]; d = (p - c) / np.linalg.norm(p - c)
+                ax.text(*(p + 0.55 * d), T.LET[i], color=RED, fontsize=12, ha="center", va="center")
+        ax.set_title(f"θ = {th}°", fontsize=15, color=INK)
+        ax.set_xlim(P[:, 0].min() - 1, P[:, 0].max() + 1); ax.set_ylim(P[:, 1].min() - 1, P[:, 1].max() + 1)
+        ax.set_aspect("equal"); ax.axis("off")
+    return fig
+
+
 def main():
     pages = [("1_lamina_parcial", lambda: lamina(False)), ("2_lamina_total", lambda: lamina(True)),
              ("3_parcial_a_total", lamina_parcial_a_total), ("4_distancias_auxiliar1", lamina_dist1),
-             ("5_distancias_auxiliar2", lamina_dist2), ("6_circunferencia", lamina_circunferencia)]
+             ("5_distancias_auxiliar2", lamina_dist2), ("6_circunferencia", lamina_circunferencia), ("7_rotacion", lamina_rotacion)]
     with PdfPages(os.path.join(OUT, "Laminas_limpias_tuerca.pdf")) as pdf:
         for name, fn in pages:
             fig = fn()
