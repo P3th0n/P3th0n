@@ -14,7 +14,8 @@ Convenciones (método americano / tercer diedro, el de las pizarras de clase):
 
 Parámetros de la pieza (cm).  S y M vienen de la hoja 2 (cotas 7 y 3).
   D_BORE es una ESTIMACIÓN a partir de la proporción de las elipses del isométrico.
-  D_EXTRA (agujero adicional en la cara superior) = None -> no se dibuja hasta tener la medida.
+  D_EXTRA = Ø del agujero de la cara superior, ESTIMADO de tu isométrico (≈1,4–1,5 cm). Atraviesa la pared
+  hasta el agujero roscado; su fondo es la curva de intersección de los dos cilindros (cálculo exacto).
 La pieza se modela como prisma hexagonal SIN chaflán (el chaflán son conos: curvas
 hiperbólicas que no cambian el procedimiento de la vista auxiliar).
 
@@ -33,8 +34,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 S = 7.0          # distancia entre caras planas (cm)
 M = 3.0          # espesor (cm)
 D_BORE = 3.8     # Ø agujero roscado (cm)  -> ESTIMADO, confirmar con la pieza
-D_EXTRA = None   # Ø agujero adicional en la cara superior (cm); None = no se dibuja
-L_EXTRA = 1.2    # profundidad del agujero adicional (cm), solo si D_EXTRA no es None
+D_EXTRA = 1.5    # Ø agujero de la cara superior (cm) -> ESTIMADO; None = no se dibuja
 FACE_K = 0       # cara inclinada a analizar: normal a 30° + 60°·k (k = 0, 2, 3, 5 son inclinadas)
 GAP = 2.0        # separación entre vistas principales en la hoja (cm)
 AUX_GAP = 4.5    # separación entre el alzado y la línea de pliegue L.T.1 (cm)
@@ -117,8 +117,44 @@ class Cil:
 
 
 CILS = [Cil([cx, 0, cz], Y, M, D_BORE / 2, -Y, Y)]
-if D_EXTRA is not None:
-    CILS.append(Cil([cx, M / 2, S], -Z, L_EXTRA, D_EXTRA / 2, Z, None))
+
+
+class AgujeroSuperior:
+    """Agujero vertical desde la cara superior (z = S) hasta el agujero roscado.
+    Su fondo es la intersección de los dos cilindros:  z = cz + sqrt(r_rosca² − (x − cx)²)."""
+
+    def __init__(self, xc, yc, r):
+        self.xc, self.yc, self.r = xc, yc, r
+
+    def zb(self, x):
+        return cz + np.sqrt((D_BORE / 2) ** 2 - (np.asarray(x) - cx) ** 2)
+
+    def _ring(self, n=181):
+        th = np.linspace(0, 2 * np.pi, n)
+        return self.xc + self.r * np.cos(th), self.yc + self.r * np.sin(th)
+
+    def rim(self):                                   # borde en la cara superior
+        x, y = self._ring()
+        return np.column_stack((x, y, np.full_like(x, S)))
+
+    def bottom(self):                                # curva de intersección con el agujero roscado
+        x, y = self._ring()
+        return np.column_stack((x, y, self.zb(x)))
+
+    def silhouettes(self, v):
+        c = np.cross(Z, v)                           # generatrices de contorno: a ±r en la dirección Z × v
+        if np.linalg.norm(c) < 1e-9:
+            return []
+        c = unit(c)
+        out = []
+        for s_ in (1, -1):
+            x, y = self.xc + s_ * self.r * c[0], self.yc + s_ * self.r * c[1]
+            out.append((np.array([x, y, S]), np.array([x, y, float(self.zb(x))])))
+        return out
+
+
+EXTRA = AgujeroSuperior(cx, M / 2, D_EXTRA / 2) if D_EXTRA else None
+assert EXTRA is None or EXTRA.r < D_BORE / 2
 
 # ----------------------------------------------------------------------------
 # 2. VISTAS: base (u, w) con u x w = n  (n hacia el observador)
@@ -269,6 +305,20 @@ def draw_view(ax, place, v, lw=1.8, hidden=True, cyl=True):
                 ax.plot(p[:, 0], p[:, 1], color=C_HID, lw=lw * 0.5, ls=(0, (4, 3)), zorder=2)
         if hidden:
             for p0, p1 in c.silhouettes(v):
+                p = place(np.array([p0, p1]))
+                ax.plot(p[:, 0], p[:, 1], color=C_HID, lw=lw * 0.5, ls=(0, (4, 3)), zorder=2)
+    if EXTRA is not None:
+        nz = Z @ v
+        if abs(nz) > EPS:                                # el borde superior no está de canto
+            p = place(EXTRA.rim())
+            if nz > EPS:
+                ax.plot(p[:, 0], p[:, 1], color=C_VIS, lw=lw * 0.8, zorder=4)
+            elif hidden:
+                ax.plot(p[:, 0], p[:, 1], color=C_HID, lw=lw * 0.5, ls=(0, (4, 3)), zorder=2)
+        if hidden and abs(nz) < 0.999:
+            p = place(EXTRA.bottom())
+            ax.plot(p[:, 0], p[:, 1], color=C_HID, lw=lw * 0.5, ls=(0, (4, 3)), zorder=2)
+            for p0, p1 in EXTRA.silhouettes(v):
                 p = place(np.array([p0, p1]))
                 ax.plot(p[:, 0], p[:, 1], color=C_HID, lw=lw * 0.5, ls=(0, (4, 3)), zorder=2)
 
@@ -467,6 +517,8 @@ def page_principales():
     ytop = ZMAX + GAP
     dim(ax, (cx - R / 2, ytop + M), (cx + R / 2, ytop + M), f"a = {R:.2f}", off=0.9)
     dim(ax, (XMAX, ytop), (XMAX, ytop + M), f"m = {M:.2f}", off=-1.1)
+    if EXTRA is not None:
+        dim(ax, (cx - EXTRA.r, ytop + EXTRA.yc), (cx + EXTRA.r, ytop + EXTRA.yc), f"Ø {D_EXTRA:.1f}", off=0.0, fs=7.5)
     dim(ax, (XMAX + GAP, 0), (XMAX + GAP + M, 0), f"m = {M:.2f}", off=-1.1)
     dim(ax, (XMAX + GAP + M, 0), (XMAX + GAP + M, S), f"s = {S:.2f}", off=-1.1)
     label(ax, (XMAX / 2, -2.4), "VISTA FRONTAL (alzado)", (0, 0), fs=10, color="0.3")
@@ -612,7 +664,7 @@ def page_verificacion():
         "LÍMITES DEL MODELO\n"
         "   • Prisma hexagonal sin chaflán (el chaflán son conos; no cambia el procedimiento).\n"
         f"   • Ø del agujero roscado = {D_BORE:.1f} cm es una ESTIMACIÓN (de las elipses del isométrico).\n"
-        "   • El agujero adicional de la cara superior no se dibuja hasta tener su Ø y profundidad (parámetro D_EXTRA).\n"
+        f"   • Agujero de la cara superior: Ø {D_EXTRA} cm ESTIMADO de tu isométrico, pasante hasta el agujero roscado (D_EXTRA).\n"
         "   • Una cara oblicua (no ⊥ a ningún plano principal) necesita DOS vistas auxiliares sucesivas (LOS1 y LOS2);\n"
         "     las caras de la tuerca son todas inclinadas, no oblicuas: basta una.")
     textbox(fig, [0.03, 0.03, 0.95, 0.87], txt, fs=10.2, mono=True)

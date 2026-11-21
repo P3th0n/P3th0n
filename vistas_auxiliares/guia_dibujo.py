@@ -34,6 +34,12 @@ LL.view = lambda ax, place, v: G.draw_view(ax, place, v, lw=LW, hidden=True, cyl
 R, S, M, E, A_ = G.R, G.S, G.M, G.E, G.R
 cx, cz, r = G.cx, G.cz, G.D_BORE / 2
 fmt = lambda v: f"{v:.2f}".replace(".", ",")
+EX = G.EXTRA                                   # agujero de la cara superior (Ø estimado)
+DX = G.D_EXTRA
+TH8 = np.deg2rad(np.arange(0, 360, 45))
+TOP8 = [(cx + EX.r * np.cos(t), EX.yc + EX.r * np.sin(t)) for t in TH8]
+TOP8_TXT = "   ".join(f"{k + 1}: x={fmt(x)} · aux1 {fmt(T.D_REF + y)} · aux2 {fmt(T.H1 - (x * T.N1[0] + S * T.N1[1]))}"
+                       for k, (x, y) in enumerate(TOP8))
 
 
 # ------------------------------------------------------------------------------------------ hoja
@@ -120,7 +126,8 @@ def portada():
     info = ["Materiales: escuadras de 45° y de 30-60°, regla larga o regla T, compás, portaminas 0,5 mm (2H para construcción, HB para repasar), "
             "borrador y plantilla de curvas (para las elipses de la hoja 4).",
             f"Datos de la pieza: s = 7 cm (entre caras), e = 8,08 cm (entre vértices), a = 4,04 cm (lado), m = 3 cm (espesor), "
-            f"Ø agujero = {G.D_BORE:.1f} cm (ESTIMADO: mídelo). Agujero adicional de la cara superior: Ø y profundidad por definir (no está en estos planos).",
+            f"Ø agujero = {G.D_BORE:.1f} cm (ESTIMADO: mídelo). Agujero de la cara superior: Ø {DX:.1f} cm (ESTIMADO de tu isométrico), centrado en esa cara "
+            "y atravesando la pared hasta el agujero roscado.",
             "Convenciones: tercer diedro (planta encima del alzado, lateral derecha a su derecha), unidades en cm. "
             "Línea visible gruesa (HB), oculta en trazos de 3 mm, ejes en trazo-punto, construcción y proyectantes muy finas (2H).",
             "Colores de los planos de referencia: negro = lo que repasas; verde = proyectantes; rojo = ejes de referencia, LOS1 y LOS2; "
@@ -154,9 +161,15 @@ def pasos_hoja1():
          "Proyectantes horizontales hacia la derecha desde z = 0 ; 3,5 ; 7 (vértices) y z = 1,6 ; 5,4 (agujero).",
          "VISTA LATERAL DERECHA: 2 cm a la derecha del alzado, rectángulo de 3 × 7 cm. Línea visible horizontal a 3,5 cm (arista del vértice). "
          "Ocultas a 1,6 y 5,4 cm (agujero). Eje horizontal a 3,5 cm.",
+         f"AGUJERO DE ARRIBA (Ø {fmt(DX)} cm, estimado): en la vista superior, circunferencia de radio {fmt(EX.r)} con centro en x = 4,04 y a "
+         f"{fmt(EX.yc)} cm del borde de abajo de esa vista (borde delantero). En el alzado: dos líneas OCULTAS verticales en x = {fmt(cx - EX.r)} y "
+         f"{fmt(cx + EX.r)}, desde el borde superior hasta tocar la circunferencia del agujero grande. En la lateral: dos ocultas verticales a "
+         f"{fmt(EX.yc - EX.r)} y {fmt(EX.yc + EX.r)} cm de su borde izquierdo, desde arriba hasta 5,4 cm, unidas por una curva oculta que baja hasta "
+         f"{fmt(float(EX.zb(cx + EX.r)))} cm en el centro (es donde los dos agujeros se cruzan).",
          "Repasa: visibles gruesas, ocultas en trazos, ejes en trazo-punto. Deja las proyectantes muy finas.",
          "COTAS (flechas cerradas, número sobre la línea): e = 8,08 bajo el alzado; s = 7 a la izquierda; Ø 3,8 en el agujero; "
-         "a = 4,04 sobre la vista superior; m = 3 en la vista superior y en la lateral; s = 7 a la derecha de la lateral."],
+         f"a = 4,04 sobre la vista superior; Ø {fmt(DX)} y su posición ({fmt(EX.yc)} cm del borde delantero) en la vista superior; "
+         "m = 3 en la vista superior y en la lateral; s = 7 a la derecha de la lateral."],
         extra=["Comprobación rápida: la vista superior muestra tres bandas de 2,02 + 4,04 + 2,02 = 8,08 cm; la lateral, una línea en la mitad."])
 
 
@@ -177,6 +190,10 @@ def plano_hoja1():
     G.dim(sub, (0, 0), (0, S), "s = 7", off=1.0, fs=8)
     G.dim(sub, (cx - r, cz), (cx + r, cz), "Ø 3,8", off=0.0, fs=7)
     G.dim(sub, (A_ / 2, yT + M), (A_ / 2 + A_, yT + M), "a = 4,04", off=0.8, fs=8)
+    G.dim(sub, (cx - EX.r, yT + EX.yc), (cx + EX.r, yT + EX.yc), f"Ø {fmt(DX)}", off=0.0, fs=6)
+    G.dim(sub, (cx + 1.25, yT), (cx + 1.25, yT + EX.yc), fmt(EX.yc), off=0.0, fs=6)
+    for x in (cx - EX.r, cx + EX.r):
+        sub.plot([x, x], [G.ZMAX, yT], color=TEAL, lw=0.4)
     G.dim(sub, (E, yT), (E, yT + M), "m = 3", off=-0.9, fs=8)
     G.dim(sub, (xR, 0), (xR + M, 0), "m = 3", off=-1.0, fs=8)
     G.dim(sub, (xR + M, 0), (xR + M, S), "s = 7", off=-1.0, fs=8)
@@ -207,15 +224,23 @@ def four_center(c3, e1, e2, rad, n=60):
         far = [Mm[(i + 1) % 4], Mm[(i + 2) % 4]]
         arcs.append((Q[i], far[0], far[1])); centers.append(Q[i])
     def inter(p1, d1, p2, d2):
-        t = np.linalg.solve(np.column_stack((d1, -d2)), p2 - p1); return p1 + t[0] * d1
+        Mx = np.column_stack((d1, -d2))
+        if abs(np.linalg.det(Mx)) < 1e-12:            # rectas paralelas: no hay cruce
+            return None
+        t = np.linalg.solve(Mx, p2 - p1); return p1 + t[0] * d1
+
+    def inside(p):                                       # dentro del rombo (convexo)
+        sg = [(Q[(i + 1) % 4] - Q[i])[0] * (p - Q[i])[1] - (Q[(i + 1) % 4] - Q[i])[1] * (p - Q[i])[0] for i in range(4)]
+        return all(x > 1e-9 for x in sg) or all(x < -1e-9 for x in sg)
     o1, o2 = obt
     small = []
     for m1 in (Mm[(o1 + 1) % 4], Mm[(o1 + 2) % 4]):
         for m2 in (Mm[(o2 + 1) % 4], Mm[(o2 + 2) % 4]):
             if np.linalg.norm(m1 - m2) > 1e-9:
                 p = inter(Q[o1], m1 - Q[o1], Q[o2], m2 - Q[o2])
-                if all(np.linalg.norm(p - x) > 1e-6 for x in small):
+                if p is not None and inside(p) and all(np.linalg.norm(p - x[0]) > 1e-6 for x in small):
                     small.append((p, m1, m2))
+    assert len(small) == 2, "el método de 4 centros debe dar 2 centros pequeños"
     for p, m1, m2 in small:
         arcs.append((p, m1, m2)); centers.append(p)
     pts = []
@@ -251,6 +276,8 @@ def pasos_hoja2():
          "Arcos grandes: centro en cada vértice obtuso, de un punto medio al otro. Arcos pequeños: centro en cada cruce, entre los dos puntos medios cercanos. "
          "Así obtienes la elipse del agujero.",
          "Borde trasero del agujero: la misma elipse desplazada 3 cm sobre Y; dibuja solo la parte que se ve a través del agujero (o toda en trazos).",
+         f"AGUJERO DE ARRIBA (Ø {fmt(DX)} cm, estimado): en la cara superior (7 cm sobre O), su centro está a 4,04 cm sobre X y {fmt(EX.yc)} cm sobre Y. "
+         f"Dibuja un rombo de lado {fmt(DX)} cm con lados paralelos a X y a Y y haz el óvalo por el mismo método de 4 centros.",
          "Repasa lo visible y deja muy fina (o borra) la construcción."],
         extra=["Comprobación: la diagonal mayor del rombo (entre vértices agudos) es la dirección larga de la elipse."])
 
@@ -282,6 +309,12 @@ def plano_hoja2():
                         sub.plot([qo[0], m[0]], [qo[1], m[1]], color=TEAL, lw=0.4)
         for a in arcs:
             sub.plot(a[:, 0], a[:, 1], color=INK, lw=LW if y == 0 else LW * 0.55, ls=ls)
+    Q, Mm, cen, arcs = four_center(np.array([cx, EX.yc, S]), np.array([1.0, 0, 0]), np.array([0, 1.0, 0]), EX.r)
+    sub.plot(*np.vstack((Q, Q[:1])).T, color=TEAL, lw=0.5)
+    for c in cen:
+        sub.plot(*c, "o", ms=2.0, color=RED)
+    for arc in arcs:
+        sub.plot(arc[:, 0], arc[:, 1], color=INK, lw=LW)
     O = iso(np.zeros(3))[0]
     G.dim(sub, iso(np.array([0, 0, 0]))[0], iso(np.array([E, 0, 0]))[0], "8,08", off=-0.8, fs=8)
     G.dim(sub, iso(np.array([0, 0, 0]))[0], iso(np.array([0, 0, S]))[0], "7", off=0.8, fs=8)
@@ -359,7 +392,11 @@ def pasos_hoja4():
          "Une hexágono delantero B-A-E-F-G-H, hexágono trasero C-D-I-J-K-L y laterales A-D, B-C, E-I, F-J, G-K, H-L. En TRAZOS: A₂E₂, E₂F₂ y E₂I₂; el resto visibles.",
          "Agujero en la auxiliar 2: método de 12 puntos (página de apoyo). Elipse trasera visible, delantera oculta, unidas por dos verticales ocultas tangentes a "
          "ambas. Ejes de la elipse: 3,80 (horizontal) × 3,29 cm (vertical).",
-         "Repasa y rotula todos los puntos con su subíndice (₁ y ₂)."])
+         f"AGUJERO DE ARRIBA: la cara superior mira hacia LOS1, así que en la auxiliar 1 su borde se ve como ELIPSE VISIBLE; en la auxiliar 2 queda OCULTA. "
+         f"Proyecta 8 puntos de su borde (cada 45°) como vértices: en el alzado caen sobre el borde superior entre x = {fmt(cx - EX.r)} y {fmt(cx + EX.r)}. "
+         "Distancias (x en el alzado · a LOS1 en la auxiliar 1 · a LOS2 en la auxiliar 2) en la tabla de abajo.",
+         "Repasa y rotula todos los puntos con su subíndice (₁ y ₂)."],
+        extra=["Borde del agujero de arriba, 8 puntos (cm):"] + textwrap.wrap(TOP8_TXT, 120))
 
 
 def apoyo_circulo():
@@ -389,11 +426,10 @@ def explicativo_ref():
         _, _, _, arcs = four_center(np.array([cx, y, cz]), np.array([1.0, 0, 0]), np.array([0, 0, 1.0]), r)
         for arc in arcs:
             a1.plot(arc[:, 0], arc[:, 1], color=INK, lw=1.4)
-    th = np.linspace(0, 2 * np.pi, 80)
-    hole = np.column_stack((cx + 0.5 * np.cos(th), M / 2 + 0.5 * np.sin(th), np.full_like(th, S)))
-    q = iso(hole); a1.plot(q[:, 0], q[:, 1], color=INK, lw=1.2)
+    for arc in four_center(np.array([cx, EX.yc, S]), np.array([1.0, 0, 0]), np.array([0, 1.0, 0]), EX.r)[3]:
+        a1.plot(arc[:, 0], arc[:, 1], color=INK, lw=1.2)
     calls = [((cx + 1.9 * np.cos(2.5), 0, cz + 1.9 * np.sin(2.5)), (-3.2, 9.5), f"Agujero roscado Ø {G.D_BORE:.1f} cm (estimado)"),
-             ((cx, M / 2, S), (2.0, 13.5), "Agujero adicional (Ø por definir):\npasador o alambre de seguridad"),
+             ((cx, M / 2, S), (2.0, 13.5), f"Agujero superior Ø {fmt(DX)} cm (estimado):\npasador o alambre de seguridad"),
              (V[[G.iA, G.iB, G.iC, G.iD]].mean(axis=0), (11.0, 9.0), "Cara inclinada ABCD (60°)"),
              ((E / 2 - 2.5, 0, 0.6), (-3.2, -1.5), "Cuerpo hexagonal: s = 7 cm, e = 8,08 cm"),
              ((E, M / 2, cz), (11.0, 2.5), "Espesor m = 3 cm")]
@@ -446,7 +482,7 @@ def checklist():
          "Bocetos explicativo, informativo y storyboard → Figuras 11, 12 y 13, sección 3.2.1.",
          "Foto midiendo la tuerca con calibrador → Anexo A.",
          "En cada «Nota. Realizado por…» escribe el nombre y el código de quien hizo la hoja.",
-         "Antes de entregar: confirma el Ø real del agujero (aquí 3,8 cm estimado) y define el agujero adicional; si cambian, avísame y regenero todo."])
+         f"Antes de entregar: confirma el Ø real de los dos agujeros (aquí 3,8 y {fmt(DX)} cm, estimados); si cambian, avísame y regenero todo."])
 
 
 def main():
