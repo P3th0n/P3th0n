@@ -214,6 +214,47 @@ notes = [
       "quizá espera que cada integrante haga las vistas de su propia pieza, no solo de la tuerca.", "cap"),
 ]
 before(E[0], notes)
+
+# ---------- MAPA: dónde va cada dibujo (tabla en la página de notas)
+MAPA = [("Nº", "Qué dibujas o fotografías", "Sección del documento", "Figura"),
+        ("—", "Mapas mentales y bocetos de exploración (ya están)", "3.1.3", "Figuras 1 a 8"),
+        ("1", "Hoja 2 · Isométrico 7 × 7 × 3 con los dos agujeros", "3.2.1", "Figura 9"),
+        ("2", "Hoja 1 · Vistas superior, frontal y lateral con cotas", "3.2.1", "Figura 10"),
+        ("3", "Boceto explicativo (isométrico con flechas y notas)", "3.2.1", "Figura 11"),
+        ("4", "Boceto informativo (vistas con cotas y notas técnicas)", "3.2.1", "Figura 12"),
+        ("5", "Storyboard (3 viñetas de uso)", "3.2.1", "Figura 13"),
+        ("6", "Hoja 3 · Proyecciones auxiliares parciales", "3.2.2", "Figura 14"),
+        ("7", "Hoja 4 · Proyección auxiliar total (A3)", "3.2.2", "Figura 15"),
+        ("8", "Rotación 3D (isométricos girados o capturas de SolidWorks)", "3.2.2", "Figura 16"),
+        ("9", "SolidWorks: pieza sin color", "3.3.1", "Figura 17"),
+        ("10", "SolidWorks: render con color", "3.3.2", "Figura 18"),
+        ("11", "SolidWorks: plano A4", "3.3.3", "Figura 19"),
+        ("12", "Foto midiendo la tuerca con calibrador", "Anexos", "Anexo A"),
+        ("13", "Láminas de apoyo: parcial a total y distancias (opcionales)", "Anexos", "Anexos B, C y D"),
+        ("14", "Verificación numérica (opcional)", "Anexos", "Anexo E"),
+        ("15", "Fotos del trabajo en grupo", "Anexos", "Anexo F")]
+tbl = d.add_table(rows=len(MAPA), cols=4)
+tbl.autofit = False
+for _c, _w in zip(tbl.columns, (1.0, 8.2, 3.6, 3.4)):
+    _c.width = Cm(_w)
+borders = OxmlElement("w:tblBorders")
+for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+    el = OxmlElement(f"w:{edge}"); el.set(qn("w:val"), "single"); el.set(qn("w:sz"), "4"); el.set(qn("w:color"), "808080")
+    borders.append(el)
+_tp = tbl._tbl.tblPr
+_after = [c for c in _tp if c.tag in (qn("w:shd"), qn("w:tblLayout"), qn("w:tblCellMar"), qn("w:tblLook"), qn("w:tblCaption"), qn("w:tblDescription"))]
+if _after:
+    _after[0].addprevious(borders)
+else:
+    _tp.append(borders)
+for ri, row in enumerate(MAPA):
+    for ci, (txt, wcm) in enumerate(zip(row, (1.0, 8.2, 3.6, 3.4))):
+        cell = tbl.cell(ri, ci); cell.width = Cm(wcm)
+        par = cell.paragraphs[0]; par.paragraph_format.first_line_indent = Cm(0); par.paragraph_format.line_spacing = 1.0
+        run = par.add_run(txt); run.bold = (ri == 0); run.font.size = docx.shared.Pt(10)
+before(E[0], [P([("Mapa: dónde va cada dibujo cuando lo termines", "b")], "cap"), tbl._tbl,
+              P("Cada espacio del documento está marcado en amarillo con «IMAGEN DE REFERENCIA» o «INSERTAR FOTO»: "
+                "reemplázalo por la foto de tu hoja y escribe en la nota tu nombre y código.", "cap")])
 pb = P([], "cap"); pb_r = OxmlElement("w:r"); br = OxmlElement("w:br"); br.set(qn("w:type"), "page"); pb_r.append(br); pb.append(pb_r)
 before(E[0], [pb])
 
@@ -360,7 +401,7 @@ set_text(E[193], [("Para seleccionar el modelo, los cuatro integrantes calificar
                   ("[COMPLETAR EN GRUPO: Boceto 1 = soporte (David), Boceto 2 = botella (Brayan), Boceto 3 = tuerca (Jose), "
                    "Boceto 4 = grapa (Davinson). Máximo: 65 puntos.]", "h")])
 to_body(E[193])
-t = d.tables[0]
+t = docx.table.Table(E[195], d._body)   # tabla de criterios (no el mapa)
 for c, name in zip(t.rows[2].cells[1:], ("soporte", "botella", "tuerca", "grapa")):
     p = c.paragraphs[0]
     r = p.add_run(); r.add_break(); r2 = p.add_run(f"({name})"); r2.bold = True
