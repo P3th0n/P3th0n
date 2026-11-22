@@ -117,6 +117,40 @@ def text_page(title, intro, steps, extra=None, fmt_name="A4"):
     return fig
 
 
+def nice(v, k=1.0):
+    """Número de cota: 7 · 1,75 · 3,5 (cm) o 70 · 17,5 (mm con k = 10)."""
+    return f"{v * k:.2f}".rstrip("0").rstrip(".").replace(".", ",")
+
+
+def acotar_vistas(ax, k=1.0, o=(0.0, 0.0), color=None, fs=7.5):
+    """Acotado completo de alzado, vista superior y lateral (posiciones de G.place_*). k = 10 da milímetros."""
+    o = np.asarray(o, float)
+    D = lambda p, q, txt, off, f=fs: G.dim(ax, np.asarray(p) + o, np.asarray(q) + o, txt, off=off, fs=f, color=color or "0.1")
+    n = lambda v: nice(v, k)
+    Q, yT, xR = G.Q1, S + G.GAP, E + G.GAP
+    # ALZADO
+    D((0, 0), (Q, 0), n(Q), -0.7); D((Q, 0), (E - Q, 0), n(E - 2 * Q), -0.7); D((E - Q, 0), (E, 0), n(Q), -0.7)
+    D((0, cz), (E, cz), n(E), -(cz + 1.5))
+    D((0, 0), (0, cz), n(cz), 0.7); D((Q, 0), (Q, S), n(S), Q + 1.5)
+    D((cx - r, cz), (cx + r, cz), "Ø " + n(2 * r), 0.0)
+    # VISTA SUPERIOR
+    D((0, yT + M), (Q, yT + M), n(Q), 0.7); D((Q, yT + M), (E - Q, yT + M), n(E - 2 * Q), 0.7); D((E - Q, yT + M), (E, yT + M), n(Q), 0.7)
+    D((0, yT + M), (E, yT + M), n(E), 1.5)
+    D((E, yT), (E, yT + M), n(M), -0.9)
+    if EX is not None:
+        D((cx - EX.r, yT + EX.yc), (cx + EX.r, yT + EX.yc), "Ø " + n(2 * EX.r), 0.0, fs - 1.5)
+        D((E - Q + 0.55, yT), (E - Q + 0.55, yT + EX.yc), n(EX.yc), 0.0, fs - 1)
+    # LATERAL DERECHA
+    D((xR, 0), (xR + M, 0), n(M), -0.7)
+    D((xR + M, 0), (xR + M, cz), n(cz), -0.7); D((xR + M, cz), (xR + M, S), n(S - cz), -0.7)
+    D((xR + M, 0), (xR + M, S), n(S), -1.5)
+    if EX is not None:
+        D((xR, S), (xR + EX.yc - EX.r, S), n(EX.yc - EX.r), 0.7, fs - 1)
+        D((xR + EX.yc - EX.r, S), (xR + EX.yc + EX.r, S), n(2 * EX.r), 0.7, fs - 1)
+        D((xR + EX.yc + EX.r, S), (xR + M, S), n(M - EX.yc - EX.r), 0.7, fs - 1)
+        D((xR, cz + r), (xR, S), n(S - cz - r), 0.7, fs - 1)
+
+
 # ================================================================================= PORTADA
 def portada():
     fig = plt.figure(figsize=(29.7 / 2.54, 21.0 / 2.54), facecolor="white")
@@ -155,7 +189,7 @@ def portada():
 
 
 # ================================================================================= HOJA 1
-OX1, OY1 = 6.0, 6.5
+OX1, OY1 = 6.0, 5.8
 
 
 def pasos_hoja1():
@@ -188,7 +222,7 @@ def pasos_hoja1():
 
 def plano_hoja1():
     fig, ax, W, H = paper("A4", "Vistas principales", 3)
-    sub = sub_axes(fig, W, H, OX1, OY1, (-3.5, 16.5), (-3.2, 14.0))
+    sub = sub_axes(fig, W, H, OX1, OY1, (-4.5, 16.5), (-3.4, 14.0))
     for pl, v in ((G.place_front, G.nF), (G.place_top, G.nT), (G.place_right, G.nR)):
         G.draw_view(sub, pl, v, lw=LW)
     cc = dict(color="#2c5aa0", lw=0.6, ls=(0, (8, 2, 1, 2)))
@@ -199,19 +233,10 @@ def plano_hoja1():
         sub.plot([x, x], [G.ZMAX if x not in (cx - r, cx + r) else cz + r, yT], color=TEAL, lw=0.4)
     for z in (0, cz, S, cz - r, cz + r):
         sub.plot([G.XMAX if z in (0, cz, S) else cx + r, xR], [z, z], color=TEAL, lw=0.4)
-    G.dim(sub, (0, 0), (E, 0), fmt(E), off=-1.0, fs=8)
-    G.dim(sub, (0, 0), (0, S), fmt(S), off=1.0, fs=8)
-    G.dim(sub, (cx - r, cz), (cx + r, cz), "Ø 3,8", off=0.0, fs=7)
-    G.dim(sub, (X1, yT + M), (X2, yT + M), fmt(SUP), off=0.8, fs=8)
-    G.dim(sub, (cx - EX.r, yT + EX.yc), (cx + EX.r, yT + EX.yc), f"Ø {fmt(DX)}", off=0.0, fs=6)
-    G.dim(sub, (cx + 1.25, yT), (cx + 1.25, yT + EX.yc), fmt(EX.yc), off=0.0, fs=6)
-    for x in (cx - EX.r, cx + EX.r):
-        sub.plot([x, x], [G.ZMAX, yT], color=TEAL, lw=0.4)
-    G.dim(sub, (E, yT), (E, yT + M), "3", off=-0.9, fs=8)
-    G.dim(sub, (xR, 0), (xR + M, 0), "3", off=-1.0, fs=8)
-    G.dim(sub, (xR + M, 0), (xR + M, S), fmt(S), off=-1.0, fs=8)
-    for txt, xy in (("VISTA FRONTAL", (E / 2, -2.4)), ("VISTA SUPERIOR", (E / 2, yT + M + 1.6)), ("LATERAL DERECHA", (xR + M / 2, S + 0.6))):
-        sub.text(*xy, txt, fontsize=7, fontfamily=BODY, color="0.35", ha="center")
+    acotar_vistas(sub, fs=7)
+    for txt, xy, ha in (("VISTA FRONTAL", (E / 2, -2.5), "center"), ("VISTA SUPERIOR", (-0.5, yT + M / 2), "right"),
+                        ("LATERAL DERECHA", (xR + M / 2, S + 1.6), "center")):
+        sub.text(*xy, txt, fontsize=7, fontfamily=BODY, color="0.35", ha=ha)
     placement(ax, OX1, OY1, OX1 - 2.6, OY1 + S + 0.9, H)
     return fig
 

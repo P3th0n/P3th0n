@@ -197,11 +197,7 @@ def h1_alzado_ocultas(ax, c):
 def h1_cotas(ax, c):
     if not c:
         return
-    dim(ax, L(0, 0), L(E, 0), "7", off=-1.1); dim(ax, L(0, 0), L(0, S), "7", off=1.1)
-    dim(ax, L(cx - r, cz), L(cx + r, cz), "Ø 3,8", off=0.0)
-    dim(ax, L(Q1, yT + M), L(E - Q1, yT + M), f2(G.LADO_SUP), off=0.8)
-    dim(ax, L(cx - EX.r, yT + EX.yc), L(cx + EX.r, yT + EX.yc), f"Ø {f2(G.D_EXTRA)}", off=0.0, fs=6)
-    dim(ax, L(xR + M, 0), L(xR + M, S), "7", off=-0.9)
+    GD.acotar_vistas(ax, o=o1, color=DIMC, fs=6.5)
 
 
 STEPS1 = [
@@ -229,7 +225,7 @@ STEPS1 = [
                                f"Arista visible horizontal a 3,5 cm. Agujero grande: ocultas a {f2(cz - r)} y {f2(cz + r)} cm.",
                                f"Agujero de arriba: ocultas verticales en {f2(EX.yc - EX.r)} y {f2(EX.yc + EX.r)} cm, desde arriba hasta {f2(cz + r)} cm, cerradas por una curva que baja a {f2(float(EX.zb(cx + EX.r)))} en el centro."], h1_lateral),
     ("Cotas y repaso", ["Repasa: visibles gruesas (HB, presionando), ocultas en trazos, ejes trazo-punto, construcción muy fina.",
-                        "Cotas a 1 cm de la pieza: 7 y 7 del alzado, Ø 3,8, lado superior 3,5, Ø 1,5 y espesor 3 en la vista superior, 7 en la lateral."], h1_cotas),
+                        "Cotas completas: en cadena (1,75 · 3,5 · 1,75) y totales (7), diámetros, posición del agujero de arriba (1,5) y su profundidad (1,6) en la lateral."], h1_cotas),
 ]
 
 
