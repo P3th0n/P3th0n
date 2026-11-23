@@ -1,0 +1,55 @@
+Vas a compilar una versión optimizada de BO3 Recomp (proyecto de recompilación estática de Black Ops III de Xbox 360, por arieco57) para MI celular, usando MI copia del juego. Trabaja por fases y espera mi confirmación donde se indica.
+
+== MI DISPOSITIVO ==
+- Redmi Note 15 Pro 5G, HyperOS, conectado por USB con depuración USB (adb).
+- SoC MediaTek Dimensity 7400-Ultra: 4x Cortex-A78 a 2,6 GHz + 4x Cortex-A55. GPU Mali-G615 MC2 (driver kbase, no KGSL).
+- El APK oficial v0.1.2 (paquete com.bo3recomp) está instalado y el juego ya está convertido en /sdcard/Android/data/com.bo3recomp/files/.
+- El driver del teléfono da errores de texturas. Funciona bien con el driver propio "PanVK faux123 v1.1.8" (Mesa 26.3-devel), instalado desde la app (Opciones > Driver de video > Personalizado).
+- Problemas a resolver: imagen muy borrosa (sobre todo en los menús) y sobrecalentamiento.
+
+== FASE 0: preparación (sin tocar el celular) ==
+1. Clona https://github.com/arieco57/bo3-recomp en el tag v0.1.2. Lee README.md, CMakeLists.txt, tools/prepare.sh, tools/fetch_deps.sh, tools/make_release.sh, tools/package_android.sh, runtime/src/gpu/vk.cpp, runtime/src/gpu/renderer.cpp, runtime/src/video_options.cpp, android/src/com/bo3recomp/OptionsPanel.java y GpuSettings.java.
+2. Revisa lo que necesitas (Android SDK con build-tools y platform, NDK, clang, cmake, ninja, python3, JDK 17) e instala lo que falte. Antes de instalar, dime la lista.
+3. Muéstrame cómo make_release.sh arma el build de Android y sigue ese mismo camino. No inventes uno nuevo.
+
+== FASE 1: sacar mis archivos del juego (solo lectura) ==
+1. Verifica con "adb devices". Lista con adb shell ls -la:
+   /sdcard/Android/data/com.bo3recomp/files/private/mp/
+   /sdcard/Android/data/com.bo3recomp/files/private/zm/
+   /sdcard/Android/data/com.bo3recomp/files/extracted/game/
+   y el Title Update en .../content/0000000000000000/4156091D/000B0000/
+2. Con adb pull, trae SOLO lo que prepare.sh necesita: default.xex, default_zm.xex, las .xexp del Title Update (o el paquete TU) y default_patched.xex de mp y zm (para comparar el SHA-1). Si prepare.sh necesita algo distinto, léelo en el código y dímelo antes.
+3. Nunca uses rm, mv ni escribas dentro de /sdcard/Android/data/com.bo3recomp/ en esta fase.
+
+== FASE 2: recompilación ==
+1. Corre tools/fetch_deps.sh y adapta tools/prepare.sh para usar los archivos de la Fase 1 (no hay .zar: salta la extracción si los .xex ya están). El default_patched.xex que genere bo3prep debe tener el mismo SHA-1 que el que trajiste del celular. Si no coincide, para y avísame.
+2. Genera ppc/mp y ppc/zm con XenonRecomp. Debe dar 0 instrucciones no reconocidas, como dice el README.
+
+== FASE 3: optimizaciones para MI celular ==
+Haz cada cambio en un commit separado y local (git), con un mensaje claro:
+A. CPU: en el build de Android, cambia BO3_MARCH/flags para Dimensity 7400: -march=armv8.2-a+dotprod+fp16+rcpc -mtune=cortex-a78. Los A55 también soportan esas extensiones. Verifica que compile.
+B. Nitidez: en renderer.cpp, el present final usa vkCmdBlitImage con VK_FILTER_LINEAR (estira la resolución interna a la pantalla). Reemplázalo por un pase de escalado AMD FSR 1 (EASU + RCAS) o, si es más simple y robusto, CAS (FidelityFX, licencia MIT; respeta su aviso de licencia). Agrega en el panel de opciones "Nitidez: Apagada / FSR" con FSR por defecto. Si el pase falla al crear el pipeline, vuelve al blit actual y anótalo en el log.
+C. Menús nítidos: agrega "Resolución automática en menús". Cuando no hay escena 3D (busca una heurística confiable en el renderer, por ejemplo frames sin depth/stencil o con pocos draws, y documenta cuál elegiste), sube a 100 %; en partida vuelve a la escala elegida. Usa histéresis para que no oscile. Puede apagarse desde opciones.
+D. Calor: valores por defecto en la primera ejecución: resolución 50 %, FPS 30, sombras bajas. Agrega 20 y 25 al límite de FPS (OptionsPanel LIMITS) solo si el código de pacing lo soporta. Revísalo y dime.
+E. NO toques la lógica del juego, la red ni las cuentas. Solo renderer, opciones, flags de compilación y empaquetado.
+
+== FASE 4: empaquetar ==
+1. Para que conviva con el oficial, cambia el paquete a com.bo3recomp.redmi y el nombre visible a "BO3 Redmi" (manifest, y cualquier ruta o nombre fijo en Java/C++. Búscalos todos con grep).
+2. Arma el APK con tools/package_android.sh. Si Turnip no es necesario para Mali y su build falla, hazlo opcional en vez de obligatorio.
+3. Firma con una keystore local nueva y guarda su ruta. La necesito para futuras actualizaciones.
+
+== FASE 5: instalar y mover datos (PIDE CONFIRMACIÓN) ==
+1. adb install del APK nuevo. NO desinstales com.bo3recomp.
+2. Abre la app nueva una vez para que cree su carpeta y ciérrala.
+3. Muéstrame el plan exacto para mover (mv, no copiar: no hay espacio para duplicar 8 GB) el contenido de /sdcard/Android/data/com.bo3recomp/files/ a /sdcard/Android/data/com.bo3recomp.redmi/files/. Espera mi "sí" antes de ejecutarlo.
+4. Si el driver PanVK no queda configurado en la app nueva, explícame cómo instalarlo desde Opciones (tengo el .zip).
+
+== FASE 6: prueba ==
+Pídeme que juegue 10 minutos con el contador de FPS en "Detallado". Después saca con adb pull los logs (busca bo3-mp-log.txt / bo3-zm-log.txt en /sdcard/Download/BO3Recomp/ o en la carpeta de datos), analízalos y propón la siguiente ronda de ajustes.
+
+== REGLAS OBLIGATORIAS ==
+- Los archivos del juego y todo lo generado a partir de ellos (ppc/, private/, extracted/, content/, las .so y el APK) son solo para mi uso personal: nunca hagas push a GitHub ni los subas a ningún servicio. No agregues remotes.
+- No actives ADB inalámbrico ni expongas adb a la red.
+- Nunca borres nada en el celular sin mi confirmación explícita.
+- Si algo falla, muéstrame el error exacto y explícame la causa antes de cambiar de estrategia.
+- Al final de cada fase dame un resumen corto: qué hiciste, qué falló y qué sigue.
